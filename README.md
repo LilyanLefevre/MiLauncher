@@ -22,7 +22,22 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 adb shell appops set com.lilyan_lefevre.milauncher GET_USAGE_STATS allow
 ```
 
-La version release est signée avec la clé debug, pour pouvoir l'installer sans keystore dédié.
+## Signature et CI
+
+GitHub Actions (`.github/workflows/release.yml`) lance les tests et construit l'APK release à chaque push.
+L'APK est disponible dans les artefacts du run ; pousser un tag `v*` publie aussi une release GitHub.
+
+L'APK est signé avec une clé de release fixe, fournie par ces secrets du dépôt :
+
+| Secret | Contenu |
+|---|---|
+| `SIGNING_KEYSTORE_BASE64` | keystore encodé en base64 |
+| `SIGNING_STORE_PASSWORD` | mot de passe du keystore |
+| `SIGNING_KEY_ALIAS` | alias de la clé |
+| `SIGNING_KEY_PASSWORD` | mot de passe de la clé |
+
+En local, Gradle lit les variables `SIGNING_KEYSTORE` (chemin du fichier), `SIGNING_STORE_PASSWORD`,
+`SIGNING_KEY_ALIAS` et `SIGNING_KEY_PASSWORD`. Sans elles, la release est signée avec la clé debug.
 
 ## En faire l'écran d'accueil
 
