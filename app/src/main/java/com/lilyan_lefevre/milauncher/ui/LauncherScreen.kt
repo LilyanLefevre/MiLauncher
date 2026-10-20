@@ -4,15 +4,22 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -21,8 +28,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -32,11 +39,6 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Devices
@@ -56,6 +58,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
 private const val COLUMNS = 6
+private val HEADER_GAP = 24.dp
 
 @Composable
 fun LauncherScreen(viewModel: LauncherViewModel) {
@@ -86,57 +89,71 @@ fun LauncherContent(
     initiallyExpanded: Boolean = false,
 ) {
     val context = LocalContext.current
-    var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
+    // Derived from focus: true while the grid holds focus, false while the bar does.
+    var expanded by remember { mutableStateOf(initiallyExpanded) }
     var menuApp by remember { mutableStateOf<InstalledApp?>(null) }
     var managingApps by remember { mutableStateOf(false) }
     val barFocus = remember { FocusRequester() }
     val gridFocus = remember { FocusRequester() }
     val appFocus = remember { AppFocus() }
 
-    // Focusing the bar collapses the screen: see its onFocusChanged.
     BackHandler { barFocus.requestFocus() }
     LaunchedEffect(Unit) { homePressed.collect { barFocus.requestFocus() } }
     LaunchedEffect(state.bar.isNotEmpty()) { if (state.bar.isNotEmpty()) barFocus.requestFocus() }
-    LaunchedEffect(expanded) { if (expanded) gridFocus.requestFocus() }
     // After a menu action the app may have moved: follow it, or fall back to the bar.
     LaunchedEffect(appFocus.packageName) {
         val target = appFocus.packageName ?: return@LaunchedEffect
-        val displayed = state.bar.any { it.packageName == target } || (expanded && state.others.any { it.packageName == target })
+        val displayed = (state.bar + state.others).any { it.packageName == target }
         if (displayed) appFocus.requester.requestFocus() else barFocus.requestFocus()
         appFocus.packageName = null
     }
 
-    Column(
+    // One continuous page: large widgets, then the bar at the bottom of the screen, then the grid
+    // below the fold. Expanding slides the whole page up until the bar sits under the compact header.
+    // Only translation and alpha are animated, so no frame needs a new layout pass.
+    val progress by animateFloatAsState(
+        targetValue = if (expanded) 1f else 0f,
+        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+        label = "expandProgress",
+    )
+    val density = LocalDensity.current
+    var barHeight by remember { mutableStateOf(0.dp) }
+    var compactHeight by remember { mutableStateOf(0.dp) }
+
+    BoxWithConstraints(
         Modifier
             .fillMaxSize()
             .background(Brush.radialGradient(listOf(Color(0xFF1B2333), MaterialTheme.colorScheme.background), radius = 1400f))
             .padding(horizontal = 56.dp, vertical = 40.dp),
     ) {
-        if (expanded) {
-            CompactWidgets(state.weather)
-            Spacer(Modifier.height(24.dp))
-        } else {
-            LargeWidgets(state.weather)
-            Spacer(Modifier.weight(1f))
-        }
+        // Distance travelled by the page; also the height left for the grid once expanded.
+        val pageHeight = maxHeight
+        val shift = (pageHeight - barHeight - compactHeight - HEADER_GAP).coerceAtLeast(0.dp)
 
-        AppRow(
-            apps = state.bar,
-            firstItemFocus = barFocus,
-            appFocus = appFocus,
-            onClick = onLaunch,
-            onLongClick = { menuApp = it },
-            modifier = Modifier
-                .onFocusChanged { if (it.hasFocus) expanded = false }
-                .onPreviewKeyEvent {
-                    // Nothing is below the bar in the home state: Down opens the expanded view.
-                    val down = it.type == KeyEventType.KeyDown && it.key == Key.DirectionDown
-                    if (down) expanded = true
-                    down
-                },
-        )
-
-        if (expanded) {
+        // Taller than the screen on purpose: the grid lives below the fold until the page slides up.
+        Column(
+            Modifier
+                .wrapContentHeight(align = Alignment.Top, unbounded = true)
+                .graphicsLayer { translationY = -progress * shift.toPx() },
+        ) {
+            // First screen: widgets at the top, the bar right below this box at the bottom edge.
+            Box(Modifier.height(pageHeight - barHeight)) {
+                LargeWidgets(
+                    weather = state.weather,
+                    // Fades out during the first half of the motion.
+                    modifier = Modifier.graphicsLayer { alpha = (1f - progress * 2f).coerceAtLeast(0f) },
+                )
+            }
+            AppRow(
+                apps = state.bar,
+                firstItemFocus = barFocus,
+                appFocus = appFocus,
+                onClick = onLaunch,
+                onLongClick = { menuApp = it },
+                modifier = Modifier
+                    .onSizeChanged { barHeight = with(density) { it.height.toDp() } }
+                    .onFocusChanged { if (it.hasFocus) expanded = false },
+            )
             AllApps(
                 apps = state.others,
                 firstItemFocus = gridFocus,
@@ -145,8 +162,20 @@ fun LauncherContent(
                 onLongClick = { menuApp = it },
                 onManageApps = { managingApps = true },
                 onOpenSettings = { context.startActivity(Intent(Settings.ACTION_SETTINGS)) },
+                modifier = Modifier
+                    .height(shift)
+                    .graphicsLayer { alpha = progress }
+                    .onFocusChanged { if (it.hasFocus) expanded = true },
             )
         }
+
+        CompactWidgets(
+            weather = state.weather,
+            modifier = Modifier
+                .onSizeChanged { compactHeight = with(density) { it.height.toDp() } }
+                // Fades in during the second half of the motion.
+                .graphicsLayer { alpha = (progress * 2f - 1f).coerceIn(0f, 1f) },
+        )
     }
 
     menuApp?.let { app ->
@@ -173,7 +202,7 @@ private class AppFocus {
 }
 
 @Composable
-private fun ColumnScope.AllApps(
+private fun AllApps(
     apps: List<InstalledApp>,
     firstItemFocus: FocusRequester,
     appFocus: AppFocus,
@@ -181,7 +210,8 @@ private fun ColumnScope.AllApps(
     onLongClick: (InstalledApp) -> Unit,
     onManageApps: () -> Unit,
     onOpenSettings: () -> Unit,
-) {
+    modifier: Modifier = Modifier,
+) = Column(modifier) {
     Text(
         stringResource(R.string.all_apps),
         style = MaterialTheme.typography.titleSmall,
