@@ -2,6 +2,12 @@
 
 Launcher Android TV minimaliste, sans pub ni recommandations, conçu pour une Xiaomi Mi Box S (Google TV).
 
+| Accueil | Vue étendue |
+|---|---|
+| ![Accueil : grande horloge, météo et barre de favoris](docs/home.jpg) | ![Vue étendue : widgets réduits et toutes les apps](docs/expanded.jpg) |
+
+![Menu de l'appui long sur une app](docs/menu.jpg)
+
 - **Accueil** : grande horloge, météo détaillée (Open-Meteo, sans clé) et barre de 6 favoris en bas de l'écran.
 - **Vue étendue** (flèche bas depuis la barre) : widgets réduits, barre en haut et toutes les apps dessous.
   Flèche haut, Retour ou Home ramènent à l'accueil.
