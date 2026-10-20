@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Utilisées par le fond de fenêtre et la bannière, avant que Compose ne dessine. -->
+    <color name="bg">#FF0B0D12</color>
+    <color name="tile">#FF1A1E27</color>
+</resources>
