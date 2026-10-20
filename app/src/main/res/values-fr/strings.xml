@@ -1,0 +1,24 @@
+<resources>
+    <string name="all_apps">Toutes les apps</string>
+    <string name="manage_apps">Gérer les apps</string>
+    <string name="settings">Paramètres</string>
+    <string name="shown_apps">Apps affichées</string>
+
+    <string name="add_to_favorites">Ajouter aux favoris</string>
+    <string name="remove_from_favorites">Retirer des favoris</string>
+    <string name="move_left">Déplacer à gauche</string>
+    <string name="move_right">Déplacer à droite</string>
+    <string name="hide">Masquer</string>
+    <string name="app_info">Infos de l\'app</string>
+
+    <string name="min_max_24h">Min %1$d° · Max %2$d° sur 24 h</string>
+
+    <string name="weather_clear">Ciel dégagé</string>
+    <string name="weather_partly_cloudy">Éclaircies</string>
+    <string name="weather_overcast">Couvert</string>
+    <string name="weather_fog">Brouillard</string>
+    <string name="weather_drizzle">Bruine</string>
+    <string name="weather_rain">Pluie</string>
+    <string name="weather_snow">Neige</string>
+    <string name="weather_thunderstorm">Orage</string>
+</resources>

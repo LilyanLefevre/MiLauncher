@@ -2,7 +2,6 @@ package com.lilyan_lefevre.milauncher.ui
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -39,15 +38,19 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.lilyan_lefevre.milauncher.R
 import com.lilyan_lefevre.milauncher.data.HourlyForecast
 import com.lilyan_lefevre.milauncher.data.InstalledApp
 import com.lilyan_lefevre.milauncher.data.Weather
+import com.lilyan_lefevre.milauncher.data.WeatherCondition
 import com.lilyan_lefevre.milauncher.ui.theme.LauncherTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -68,10 +71,10 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
 }
 
 /**
- * Deux états :
- * - accueil : grands widgets, barre de favoris en bas de l'écran ;
- * - étendu (flèche bas depuis la barre) : widgets réduits, barre en haut et toutes les apps dessous.
- * Remonter sur la barre, Retour ou Home ramènent à l'accueil.
+ * Two states:
+ * - home: large widgets, favorites bar at the bottom of the screen;
+ * - expanded (Down from the bar): compact widgets, bar at the top and every other app below.
+ * Moving back up to the bar, Back or Home return to the home state.
  */
 @Composable
 fun LauncherContent(
@@ -90,12 +93,12 @@ fun LauncherContent(
     val gridFocus = remember { FocusRequester() }
     val appFocus = remember { AppFocus() }
 
-    // Donner le focus à la barre la replie : voir son onFocusChanged.
+    // Focusing the bar collapses the screen: see its onFocusChanged.
     BackHandler { barFocus.requestFocus() }
     LaunchedEffect(Unit) { homePressed.collect { barFocus.requestFocus() } }
     LaunchedEffect(state.bar.isNotEmpty()) { if (state.bar.isNotEmpty()) barFocus.requestFocus() }
     LaunchedEffect(expanded) { if (expanded) gridFocus.requestFocus() }
-    // Après une action du menu, l'app a pu changer de place : on la suit, sinon retour à la barre.
+    // After a menu action the app may have moved: follow it, or fall back to the bar.
     LaunchedEffect(appFocus.packageName) {
         val target = appFocus.packageName ?: return@LaunchedEffect
         val displayed = state.bar.any { it.packageName == target } || (expanded && state.others.any { it.packageName == target })
@@ -126,7 +129,7 @@ fun LauncherContent(
             modifier = Modifier
                 .onFocusChanged { if (it.hasFocus) expanded = false }
                 .onPreviewKeyEvent {
-                    // Rien sous la barre à l'accueil : la flèche bas ouvre la vue étendue.
+                    // Nothing is below the bar in the home state: Down opens the expanded view.
                     val down = it.type == KeyEventType.KeyDown && it.key == Key.DirectionDown
                     if (down) expanded = true
                     down
@@ -163,7 +166,7 @@ fun LauncherContent(
     }
 }
 
-/** Demande de focus sur une app précise, quelle que soit sa position. */
+/** Focus request for a given app, wherever it is displayed. */
 private class AppFocus {
     var packageName by mutableStateOf<String?>(null)
     val requester = FocusRequester()
@@ -180,12 +183,12 @@ private fun ColumnScope.AllApps(
     onOpenSettings: () -> Unit,
 ) {
     Text(
-        "Toutes les apps",
+        stringResource(R.string.all_apps),
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
     )
-    // Grille simple (pas de lazy) : quelques dizaines d'apps, et le focus initial reste fiable.
+    // Plain (non-lazy) grid: a few dozen apps at most, and initial focus stays reliable.
     Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
         val rows = apps.chunked(COLUMNS)
         rows.forEachIndexed { index, row ->
@@ -193,11 +196,11 @@ private fun ColumnScope.AllApps(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(TileSpacing)) {
             ActionTile(
-                "Gérer les apps",
+                stringResource(R.string.manage_apps),
                 onManageApps,
                 if (apps.isEmpty()) Modifier.focusRequester(firstItemFocus) else Modifier,
             )
-            ActionTile("Paramètres", onOpenSettings)
+            ActionTile(stringResource(R.string.settings), onOpenSettings)
         }
     }
 }
@@ -213,7 +216,7 @@ private fun AppRow(
 ) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(TileSpacing)) {
         apps.forEachIndexed { index, app ->
-            // La clé garde le focus sur la même app quand l'ordre change après un rafraîchissement.
+            // Keying by package keeps focus on the same app when a refresh reorders the list.
             key(app.packageName) {
                 AppTile(
                     app = app,
@@ -233,27 +236,27 @@ private fun appActions(app: InstalledApp, viewModel: LauncherViewModel, context:
     val position = favorites.indexOf(app.packageName)
     return buildList {
         when {
-            position < 0 && viewModel.canAddFavorite() -> add(MenuAction("Ajouter aux favoris") { viewModel.addFavorite(app) })
+            position < 0 && viewModel.canAddFavorite() -> add(MenuAction(context.getString(R.string.add_to_favorites)) { viewModel.addFavorite(app) })
             position >= 0 -> {
-                add(MenuAction("Retirer des favoris") { viewModel.removeFavorite(app) })
-                if (position > 0) add(MenuAction("Déplacer à gauche") { viewModel.moveFavorite(app, -1) })
-                if (position < favorites.lastIndex) add(MenuAction("Déplacer à droite") { viewModel.moveFavorite(app, 1) })
+                add(MenuAction(context.getString(R.string.remove_from_favorites)) { viewModel.removeFavorite(app) })
+                if (position > 0) add(MenuAction(context.getString(R.string.move_left)) { viewModel.moveFavorite(app, -1) })
+                if (position < favorites.lastIndex) add(MenuAction(context.getString(R.string.move_right)) { viewModel.moveFavorite(app, 1) })
             }
         }
-        add(MenuAction("Masquer") { viewModel.setHidden(app, hidden = true) })
-        add(MenuAction("Infos de l'app") {
-            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${app.packageName}")))
+        add(MenuAction(context.getString(R.string.hide)) { viewModel.setHidden(app, hidden = true) })
+        add(MenuAction(context.getString(R.string.app_info)) {
+            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${app.packageName}".toUri()))
         })
     }
 }
 
-@Preview(name = "Accueil", device = Devices.TV_1080p)
+@Preview(name = "Home", device = Devices.TV_1080p)
 @Composable
 private fun LauncherHomePreview() {
     LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }) }
 }
 
-@Preview(name = "Vue étendue", device = Devices.TV_1080p)
+@Preview(name = "Expanded", device = Devices.TV_1080p)
 @Composable
 private fun LauncherExpandedPreview() {
     LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, initiallyExpanded = true) }
@@ -267,13 +270,13 @@ private val previewState by lazy {
         apps = apps,
         favorites = apps.take(4).map { it.packageName },
         weather = Weather(
-            temperature = 12, description = "Pluie", city = "Lyon", min = 9, max = 16,
-            hourly = listOf(HourlyForecast("02h", 11), HourlyForecast("05h", 11), HourlyForecast("08h", 10), HourlyForecast("11h", 11)),
+            temperature = 12, condition = WeatherCondition.RAIN, city = "Lyon", min = 9, max = 16,
+            hourly = listOf(HourlyForecast(2, 11), HourlyForecast(5, 11), HourlyForecast(8, 10), HourlyForecast(11, 11)),
         ),
     )
 }
 
-/** Bannière unie pour les previews, faute de vraies apps installées. */
+/** Solid-color banner for previews, since no real apps are installed there. */
 private fun solidBanner(color: Color): ImageBitmap = ImageBitmap(320, 180).also {
     Canvas(it).drawRect(0f, 0f, 320f, 180f, Paint().apply { this.color = color })
 }

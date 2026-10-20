@@ -28,13 +28,13 @@ data class LauncherUiState(
 ) {
     private val visible by lazy { apps.filter { it.packageName !in hidden } }
 
-    /** Barre principale : les favoris, ou à défaut les apps les plus récentes. */
+    /** Main bar: the favorites, or the most recently used apps when there are none. */
     val bar: List<InstalledApp> by lazy {
         val byPackage = visible.associateBy { it.packageName }
         favorites.mapNotNull { byPackage[it] }.ifEmpty { visible.take(MAX_FAVORITES) }
     }
 
-    /** Toutes les autres apps visibles, affichées sous la barre en vue étendue. */
+    /** All other visible apps, shown below the bar in the expanded view. */
     val others: List<InstalledApp> by lazy { visible - bar.toSet() }
 }
 
@@ -48,7 +48,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     val state: StateFlow<LauncherUiState> = _state
 
     private val _homePressed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    /** Émis quand Home est pressé alors que le launcher est déjà affiché. */
+    /** Emitted when Home is pressed while the launcher is already shown. */
     val homePressed: SharedFlow<Unit> = _homePressed
 
     init {
@@ -56,13 +56,13 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
             while (true) {
                 val weather = weatherRepository.fetch()
                 if (weather != null) _state.update { it.copy(weather = weather) }
-                // Nouvel essai rapide si le réseau n'était pas encore prêt (démarrage de la box).
+                // Retry soon if the network was not ready yet (device boot).
                 delay(if (weather != null) 30.minutes else 1.minutes)
             }
         }
     }
 
-    /** Recharge la liste : appelé à chaque retour sur le launcher (installations, ordre récent). */
+    /** Reloads the app list; called whenever the launcher comes back (installs, recency order). */
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
             val loaded = apps.loadApps()
@@ -84,7 +84,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     fun removeFavorite(app: InstalledApp) = saveFavorites(_state.value.favorites - app.packageName)
 
-    /** Décale un favori de [offset] places dans la barre. */
+    /** Moves a favorite by [offset] positions in the bar. */
     fun moveFavorite(app: InstalledApp, offset: Int) {
         val favorites = _state.value.favorites.toMutableList()
         val from = favorites.indexOf(app.packageName)
@@ -97,7 +97,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     fun setHidden(app: InstalledApp, hidden: Boolean) {
         val updated = if (hidden) _state.value.hidden + app.packageName else _state.value.hidden - app.packageName
         prefs.hidden = updated
-        // Une app masquée quitte aussi les favoris pour libérer sa place.
+        // A hidden app also leaves the favorites to free its slot.
         if (hidden) removeFavorite(app)
         _state.update { it.copy(hidden = updated) }
     }

@@ -19,7 +19,7 @@ private val LauncherColors = darkColorScheme(
 @Composable
 fun LauncherTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = LauncherColors) {
-        // Pas de Surface à la racine : on fixe la couleur de texte par défaut ici.
+        // No Surface at the root, so the default text color is provided here.
         CompositionLocalProvider(LocalContentColor provides LauncherColors.onSurface, content = content)
     }
 }

@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.tv.material3.ListItem
@@ -20,11 +21,12 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
+import com.lilyan_lefevre.milauncher.R
 import com.lilyan_lefevre.milauncher.data.InstalledApp
 
 data class MenuAction(val label: String, val onClick: () -> Unit)
 
-/** Menu de l'appui long sur une app. */
+/** Long-press menu of an app. */
 @Composable
 fun AppMenuDialog(title: String, actions: List<MenuAction>, onDismiss: () -> Unit) {
     DialogFrame(title, onDismiss) { firstItem ->
@@ -39,7 +41,7 @@ fun AppMenuDialog(title: String, actions: List<MenuAction>, onDismiss: () -> Uni
     }
 }
 
-/** Liste de toutes les apps avec un interrupteur affichée / masquée, appliqué immédiatement. */
+/** Every app with a shown/hidden switch, applied immediately. */
 @Composable
 fun ManageAppsDialog(
     apps: List<InstalledApp>,
@@ -47,7 +49,7 @@ fun ManageAppsDialog(
     onToggle: (app: InstalledApp, hide: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    DialogFrame("Apps affichées", onDismiss) { firstItem ->
+    DialogFrame(stringResource(R.string.shown_apps), onDismiss) { firstItem ->
         apps.forEachIndexed { index, app ->
             val shown = app.packageName !in hidden
             ListItem(
@@ -75,7 +77,7 @@ private fun DialogFrame(title: String, onDismiss: () -> Unit, items: @Composable
                 items(firstItem)
             }
         }
-        // Dans le contenu du Dialog : sa fenêtre a sa propre composition.
+        // Inside the Dialog content: its window has its own composition.
         LaunchedEffect(Unit) { firstItem.requestFocus() }
     }
 }

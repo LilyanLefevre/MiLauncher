@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
         viewModel.refresh()
     }
 
-    /** Home pressé alors que le launcher est déjà au premier plan (launchMode singleTask). */
+    /** Home pressed while the launcher is already in the foreground (launchMode singleTask). */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         viewModel.onHomePressed()

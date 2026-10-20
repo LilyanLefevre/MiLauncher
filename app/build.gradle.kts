@@ -21,7 +21,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signé avec la clé debug pour pouvoir installer par adb sans keystore dédié.
+            // Signed with the debug key so it can be installed through adb without a dedicated keystore.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -50,6 +50,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
-    // org.json n'est qu'un stub dans les tests JVM : on embarque la vraie implémentation.
+    // org.json is only a stub in JVM tests: ship the real implementation.
     testImplementation(libs.json)
 }

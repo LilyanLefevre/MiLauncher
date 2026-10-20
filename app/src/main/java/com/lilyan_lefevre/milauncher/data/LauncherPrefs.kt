@@ -3,7 +3,7 @@ package com.lilyan_lefevre.milauncher.data
 import android.content.Context
 import androidx.core.content.edit
 
-/** Choix de l'utilisateur : favoris (ordonnés) et apps masquées. */
+/** User choices: ordered favorites and hidden apps. */
 class LauncherPrefs(context: Context) {
 
     private val prefs = context.getSharedPreferences("launcher", Context.MODE_PRIVATE)

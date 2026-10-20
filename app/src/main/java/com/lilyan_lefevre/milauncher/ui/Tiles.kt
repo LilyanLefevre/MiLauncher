@@ -34,7 +34,7 @@ val TileWidth = 120.dp
 val TileHeight = 68.dp
 val TileSpacing = 16.dp
 
-/** Tuile d'app : bannière 16:9, zoom et anneau au focus, nom affiché seulement au focus. */
+/** App tile: 16:9 banner, zoom and ring on focus, name shown only when focused. */
 @Composable
 fun AppTile(
     app: InstalledApp,
@@ -54,7 +54,7 @@ fun AppTile(
     }
 }
 
-/** Tuile texte pour les actions du launcher (gérer les apps, paramètres). */
+/** Text tile for launcher actions (manage apps, settings). */
 @Composable
 fun ActionTile(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     TileFrame(label = label, showLabel = false, onClick = onClick, modifier = modifier) {
@@ -81,7 +81,7 @@ private fun TileFrame(
     var focused by remember { mutableStateOf(false) }
     val labelAlpha by animateFloatAsState(if (focused && showLabel) 1f else 0f, label = "labelAlpha")
 
-    // Le padding vertical réserve la place du zoom et de l'anneau : le défilement ne voit que les bornes non zoomées.
+    // Vertical padding leaves room for the zoom and ring: scrolling only sees the unscaled bounds.
     Column(modifier.width(TileWidth).padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Card(
             onClick = onClick,
@@ -92,7 +92,7 @@ private fun TileFrame(
             shape = CardDefaults.shape(RoundedCornerShape(10.dp)),
             colors = CardDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
             scale = CardDefaults.scale(focusedScale = 1.1f),
-            // Anneau décollé de la tuile pour rester visible sur les bannières claires.
+            // Ring offset from the tile so it stays visible on light banners.
             border = CardDefaults.border(
                 focusedBorder = Border(BorderStroke(2.dp, MaterialTheme.colorScheme.border), inset = 4.dp, shape = RoundedCornerShape(14.dp)),
             ),

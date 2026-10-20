@@ -11,7 +11,7 @@ import androidx.core.graphics.drawable.toBitmap
 data class InstalledApp(
     val packageName: String,
     val label: String,
-    /** Bannière TV 16:9 si l'app en fournit une, sinon son icône. */
+    /** 16:9 TV banner when the app provides one, otherwise its icon. */
     val image: ImageBitmap,
     val hasBanner: Boolean,
 )
@@ -20,7 +20,7 @@ class AppRepository(private val context: Context) {
 
     private val pm = context.packageManager
 
-    /** Apps lançables, les plus récemment utilisées d'abord puis par ordre alphabétique. */
+    /** Launchable apps, most recently used first, then alphabetically. */
     fun loadApps(): List<InstalledApp> {
         val lastUsed = lastUsedTimes()
         val seen = mutableSetOf(context.packageName)
@@ -50,7 +50,7 @@ class AppRepository(private val context: Context) {
         )
     }
 
-    /** Vide tant que la permission n'a pas été accordée par adb (voir README). */
+    /** Empty until the permission is granted through adb (see README). */
     private fun lastUsedTimes(): Map<String, Long> {
         val usm = context.getSystemService(UsageStatsManager::class.java)
         val now = System.currentTimeMillis()
