@@ -1,5 +1,6 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -28,20 +29,43 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Devices
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.lilyan_lefevre.milauncher.data.HourlyForecast
 import com.lilyan_lefevre.milauncher.data.InstalledApp
+import com.lilyan_lefevre.milauncher.data.Weather
+import com.lilyan_lefevre.milauncher.ui.theme.LauncherTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 private const val COLUMNS = 6
+
+@Composable
+fun LauncherScreen(viewModel: LauncherViewModel) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    LauncherContent(
+        state = state,
+        homePressed = viewModel.homePressed,
+        onLaunch = viewModel::launch,
+        menuActions = { appActions(it, viewModel, context) },
+        onToggleHidden = viewModel::setHidden,
+    )
+}
 
 /**
  * Deux états :
@@ -50,10 +74,16 @@ private const val COLUMNS = 6
  * Remonter sur la barre, Retour ou Home ramènent à l'accueil.
  */
 @Composable
-fun LauncherScreen(viewModel: LauncherViewModel) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+fun LauncherContent(
+    state: LauncherUiState,
+    homePressed: Flow<Unit>,
+    onLaunch: (InstalledApp) -> Unit,
+    menuActions: (InstalledApp) -> List<MenuAction>,
+    onToggleHidden: (app: InstalledApp, hide: Boolean) -> Unit,
+    initiallyExpanded: Boolean = false,
+) {
     val context = LocalContext.current
-    var expanded by rememberSaveable { mutableStateOf(false) }
+    var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     var menuApp by remember { mutableStateOf<InstalledApp?>(null) }
     var managingApps by remember { mutableStateOf(false) }
     val barFocus = remember { FocusRequester() }
@@ -62,7 +92,7 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
 
     // Donner le focus à la barre la replie : voir son onFocusChanged.
     BackHandler { barFocus.requestFocus() }
-    LaunchedEffect(Unit) { viewModel.homePressed.collect { barFocus.requestFocus() } }
+    LaunchedEffect(Unit) { homePressed.collect { barFocus.requestFocus() } }
     LaunchedEffect(state.bar.isNotEmpty()) { if (state.bar.isNotEmpty()) barFocus.requestFocus() }
     LaunchedEffect(expanded) { if (expanded) gridFocus.requestFocus() }
     // Après une action du menu, l'app a pu changer de place : on la suit, sinon retour à la barre.
@@ -91,7 +121,7 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
             apps = state.bar,
             firstItemFocus = barFocus,
             appFocus = appFocus,
-            onClick = viewModel::launch,
+            onClick = onLaunch,
             onLongClick = { menuApp = it },
             modifier = Modifier
                 .onFocusChanged { if (it.hasFocus) expanded = false }
@@ -108,7 +138,7 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
                 apps = state.others,
                 firstItemFocus = gridFocus,
                 appFocus = appFocus,
-                onClick = viewModel::launch,
+                onClick = onLaunch,
                 onLongClick = { menuApp = it },
                 onManageApps = { managingApps = true },
                 onOpenSettings = { context.startActivity(Intent(Settings.ACTION_SETTINGS)) },
@@ -119,7 +149,7 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
     menuApp?.let { app ->
         AppMenuDialog(
             title = app.label,
-            actions = appActions(app, viewModel),
+            actions = menuActions(app),
             onDismiss = { menuApp = null; appFocus.packageName = app.packageName },
         )
     }
@@ -127,7 +157,7 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
         ManageAppsDialog(
             apps = state.apps.sortedBy { it.label.lowercase() },
             hidden = state.hidden,
-            onToggle = viewModel::setHidden,
+            onToggle = onToggleHidden,
             onDismiss = { managingApps = false },
         )
     }
@@ -198,9 +228,7 @@ private fun AppRow(
     }
 }
 
-@Composable
-private fun appActions(app: InstalledApp, viewModel: LauncherViewModel): List<MenuAction> {
-    val context = LocalContext.current
+private fun appActions(app: InstalledApp, viewModel: LauncherViewModel, context: Context): List<MenuAction> {
     val favorites = viewModel.state.value.favorites
     val position = favorites.indexOf(app.packageName)
     return buildList {
@@ -217,4 +245,35 @@ private fun appActions(app: InstalledApp, viewModel: LauncherViewModel): List<Me
             context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${app.packageName}")))
         })
     }
+}
+
+@Preview(name = "Accueil", device = Devices.TV_1080p)
+@Composable
+private fun LauncherHomePreview() {
+    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }) }
+}
+
+@Preview(name = "Vue étendue", device = Devices.TV_1080p)
+@Composable
+private fun LauncherExpandedPreview() {
+    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, initiallyExpanded = true) }
+}
+
+private val previewState by lazy {
+    val colors = listOf(0xFFE50914, 0xFF9146FF, 0xFF1DB954, 0xFF0F79AF, 0xFFFF5722, 0xFF113CCF, 0xFF00A8E1, 0xFFFFC107)
+    val apps = listOf("Netflix", "Twitch", "Spotify", "Disney+", "ARTE", "TF1+", "Prime Video", "Galerie", "Kodi", "YouTube")
+        .mapIndexed { i, label -> InstalledApp("preview.$i", label, solidBanner(Color(colors[i % colors.size])), hasBanner = true) }
+    LauncherUiState(
+        apps = apps,
+        favorites = apps.take(4).map { it.packageName },
+        weather = Weather(
+            temperature = 12, description = "Pluie", city = "Lyon", min = 9, max = 16,
+            hourly = listOf(HourlyForecast("02h", 11), HourlyForecast("05h", 11), HourlyForecast("08h", 10), HourlyForecast("11h", 11)),
+        ),
+    )
+}
+
+/** Bannière unie pour les previews, faute de vraies apps installées. */
+private fun solidBanner(color: Color): ImageBitmap = ImageBitmap(320, 180).also {
+    Canvas(it).drawRect(0f, 0f, 320f, 180f, Paint().apply { this.color = color })
 }
