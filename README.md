@@ -3,7 +3,7 @@
 Launcher Android TV minimaliste, sans pub ni recommandations, conçu pour une Xiaomi Mi Box S (Google TV).
 Kotlin, Jetpack Compose et [Compose for TV](https://developer.android.com/jetpack/androidx/releases/tv).
 
-![Démo sur la box : passage à la vue étendue, appui long, retour à l'accueil](docs/demo.gif)
+![Démo sur la box : défilement vers la vue étendue, appui long sur une app, temps d'écran](docs/demo.gif)
 
 [Vidéo en qualité d'origine](docs/demo.mp4), filmée sur la box (l'enregistreur de la box saute les images
 identiques, la vidéo est donc plus rapide que la réalité).
