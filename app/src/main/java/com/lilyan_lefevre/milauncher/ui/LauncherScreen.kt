@@ -42,12 +42,14 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,6 +67,19 @@ import kotlinx.coroutines.flow.emptyFlow
 
 private const val COLUMNS = 6
 private val HEADER_GAP = 24.dp
+private val GLOW_ROOM = 32.dp
+
+/** Lays the element out [by] larger on every side than the space it is given, centered on it. */
+private fun Modifier.outset(by: Dp) = layout { measurable, constraints ->
+    val extra = (by * 2).roundToPx()
+    val placeable = measurable.measure(
+        constraints.copy(
+            maxWidth = if (constraints.hasBoundedWidth) constraints.maxWidth + extra else constraints.maxWidth,
+            maxHeight = if (constraints.hasBoundedHeight) constraints.maxHeight + extra else constraints.maxHeight
+        )
+    )
+    layout(placeable.width - extra, placeable.height - extra) { placeable.place(-by.roundToPx(), -by.roundToPx()) }
+}
 
 @Composable
 fun LauncherScreen(viewModel: LauncherViewModel) {
@@ -251,7 +266,7 @@ fun LauncherContent(state: LauncherUiState, homePressed: Flow<Unit>, actions: La
 
 /**
  * Alpha applied to each draw call instead of an offscreen layer: a layer would clip focused tiles,
- * whose zoom and ring extend past the bounds, for the whole fade.
+ * whose zoom and halo extend past the bounds, for the whole fade.
  */
 private fun Modifier.fade(alpha: () -> Float) = graphicsLayer {
     this.alpha = alpha()
@@ -282,7 +297,8 @@ private fun AllApps(
         modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
     )
     // Plain (non-lazy) grid: a few dozen apps at most, and initial focus stays reliable.
-    Column(Modifier.weight(1f).verticalScroll(scrollState)) {
+    // The scroll container clips its content: let it overflow by GLOW_ROOM so focus halos are not cut.
+    Column(Modifier.weight(1f).outset(GLOW_ROOM).verticalScroll(scrollState).padding(GLOW_ROOM)) {
         val rows = apps.chunked(COLUMNS)
         rows.forEachIndexed { index, row ->
             AppRow(row, if (index == 0) firstItemFocus else null, appFocus, onClick, onLongClick)

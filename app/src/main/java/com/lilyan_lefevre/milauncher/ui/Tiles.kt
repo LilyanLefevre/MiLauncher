@@ -5,7 +5,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -51,7 +50,7 @@ import com.lilyan_lefevre.milauncher.data.InstalledApp
 
 val TileSpacing = 16.dp
 
-/** App tile: 16:9 banner, zoom and ring on focus, name shown only when focused. */
+/** App tile: 16:9 banner, zoom, halo and shine on focus, name shown only when focused. */
 @Composable
 fun AppTile(app: InstalledApp, onClick: () -> Unit, onLongClick: () -> Unit, modifier: Modifier = Modifier) {
     TileFrame(
@@ -111,7 +110,7 @@ private fun TileFrame(
         }
     }
 
-    // Vertical padding leaves room for the zoom and ring: scrolling only sees the unscaled bounds.
+    // Vertical padding leaves room for the zoom: scrolling only sees the unscaled bounds.
     Column(modifier.padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
             if (glow > 0f) Glow(color, glow, Modifier.matchParentSize())
@@ -124,14 +123,8 @@ private fun TileFrame(
                 shape = CardDefaults.shape(RoundedCornerShape(10.dp)),
                 colors = CardDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
                 scale = CardDefaults.scale(focusedScale = 1.1f),
-                // Ring offset from the tile so it stays visible on light banners.
-                border = CardDefaults.border(
-                    focusedBorder = Border(
-                        BorderStroke(2.dp, MaterialTheme.colorScheme.border),
-                        inset = 4.dp,
-                        shape = RoundedCornerShape(14.dp)
-                    )
-                )
+                // Focus shows as zoom and halo: no border (the default one is a ring in the theme border color).
+                border = CardDefaults.border(focusedBorder = Border.None)
             ) {
                 Box(
                     Modifier.fillMaxSize().drawWithContent {
@@ -148,7 +141,7 @@ private fun TileFrame(
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            // Clears the zoomed tile and its ring, which reach about 7 dp below the unscaled bounds.
+            // Clears the zoomed tile, which reaches about 4 dp below the unscaled bounds.
             modifier = Modifier.padding(top = 14.dp).alpha(labelAlpha)
         )
     }
