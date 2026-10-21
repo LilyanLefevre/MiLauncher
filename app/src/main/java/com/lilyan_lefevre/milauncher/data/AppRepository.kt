@@ -18,7 +18,9 @@ data class InstalledApp(
     val image: ImageBitmap,
     val hasBanner: Boolean,
     /** False for system apps, which cannot be uninstalled. */
-    val canUninstall: Boolean = false
+    val canUninstall: Boolean = false,
+    /** Dominant vivid color of the image as ARGB, null when it has none (focus glow). */
+    val accent: Int? = null
 )
 
 class AppRepository(private val context: Context) {
@@ -81,12 +83,18 @@ class AppRepository(private val context: Context) {
     private fun ActivityInfo.toInstalledApp(): InstalledApp {
         val banner = loadBanner(pm) ?: applicationInfo.loadBanner(pm)
         val drawable = banner ?: loadIcon(pm)
+        // A small copy is enough to find the dominant color.
+        val sample = drawable.toBitmap(SAMPLE_WIDTH, SAMPLE_HEIGHT)
+        val pixels = IntArray(SAMPLE_WIDTH * SAMPLE_HEIGHT).also {
+            sample.getPixels(it, 0, SAMPLE_WIDTH, 0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT)
+        }
         return InstalledApp(
             packageName = packageName,
             label = loadLabel(pm).toString(),
             image = drawable.toBitmap().asImageBitmap(),
             hasBanner = banner != null,
-            canUninstall = applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
+            canUninstall = applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0,
+            accent = accentColor(pixels)
         )
     }
 
@@ -98,6 +106,8 @@ class AppRepository(private val context: Context) {
     }
 
     private companion object {
+        const val SAMPLE_WIDTH = 32
+        const val SAMPLE_HEIGHT = 18
         const val THIRTY_DAYS_MS = 30L * 24 * 3600 * 1000
     }
 }

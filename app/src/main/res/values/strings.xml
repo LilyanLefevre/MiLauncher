@@ -15,6 +15,7 @@
     <string name="uninstall">Uninstall</string>
 
     <string name="screen_time">Screen time</string>
+    <string name="week_screen_time">This week: %1$s</string>
     <string name="today">Today</string>
     <string name="last_7_days">Last 7 days</string>
     <string name="screen_time_total">Total: %1$s</string>

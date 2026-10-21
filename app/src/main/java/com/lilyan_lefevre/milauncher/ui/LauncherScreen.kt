@@ -152,6 +152,7 @@ fun LauncherContent(state: LauncherUiState, homePressed: Flow<Unit>, actions: La
             Box(Modifier.height(pageHeight - barHeight)) {
                 LargeWidgets(
                     weather = state.weather,
+                    weekScreenTime = state.weekScreenTime,
                     // Fades out during the first half of the motion.
                     modifier = Modifier.fade { (1f - progress * 2f).coerceAtLeast(0f) }
                 )
@@ -400,7 +401,8 @@ private val previewState by lazy {
             min = 9,
             max = 16,
             hourly = listOf(HourlyForecast(2, 11), HourlyForecast(5, 11), HourlyForecast(8, 10), HourlyForecast(11, 11))
-        )
+        ),
+        weekScreenTime = listOf(52L, 75L, 30L, 0L, 96L, 61L, 38L).map { it * 60_000 }
     )
 }
 

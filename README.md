@@ -20,7 +20,9 @@ identiques, la vidéo est donc plus rapide que la réalité).
 |---|---|
 | <img src="docs/phone-remote.jpg" alt="Télécommande sur le téléphone : croix directionnelle, volume, médias et apps" width="300"> | ![Dialogue Télécommande avec QR code d'appairage (adresse et code floutés)](docs/remote-dialog.jpg) |
 
-- **Accueil** : grande horloge, météo détaillée (Open-Meteo, sans clé) et barre de 6 favoris en bas de l'écran.
+- **Accueil** : grande horloge, météo détaillée (Open-Meteo, sans clé), temps d'écran de la semaine jour par jour
+  et barre de 6 favoris en bas de l'écran. La tuile sélectionnée s'entoure d'un halo de la couleur de l'app,
+  traversé d'un reflet.
 - **Vue étendue** (flèche bas depuis la barre) : la page défile vers le haut, les widgets passent en version
   réduite, la barre remonte et toutes les apps apparaissent dessous.
   Flèche haut, Retour ou Home ramènent à l'accueil.

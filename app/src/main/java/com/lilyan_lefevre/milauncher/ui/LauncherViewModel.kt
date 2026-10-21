@@ -47,7 +47,9 @@ data class LauncherUiState(
     val updating: Boolean = false,
     val remote: RemoteInfo = RemoteInfo(),
     /** Needed for the recency order and screen time; granted in the system settings. */
-    val usageAccess: Boolean = true
+    val usageAccess: Boolean = true,
+    /** Screen time of each of the last 7 days, today last; null without usage access. */
+    val weekScreenTime: List<Long>? = null
 ) {
     private val visible by lazy { apps.filter { it.packageName !in hidden } }
 
@@ -137,7 +139,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
             val loaded = apps.loadApps()
-            _state.update { it.copy(apps = loaded, usageAccess = Permissions.hasUsageAccess(getApplication())) }
+            val usageAccess = Permissions.hasUsageAccess(getApplication())
+            // Only apps the launcher lists: system services (assistant, keyboard…) are not screen time.
+            val week = if (usageAccess) screenTimeRepository.dailyTotals(loaded.map { it.packageName }.toSet()) else null
+            _state.update { it.copy(apps = loaded, usageAccess = usageAccess, weekScreenTime = week) }
         }
         // Also catches permissions granted in the settings while the launcher was in the background.
         refreshRemote()

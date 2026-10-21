@@ -213,16 +213,6 @@ private val ScreenTimePeriod.label: Int
     }
 
 @Composable
-private fun formatDuration(millis: Long): String {
-    val minutes = millis / 60_000
-    return if (minutes >= 60) {
-        stringResource(R.string.duration_hours_minutes, minutes / 60, minutes % 60)
-    } else {
-        stringResource(R.string.duration_minutes, minutes)
-    }
-}
-
-@Composable
 private fun DialogFrame(title: String, onDismiss: () -> Unit, width: Dp = 480.dp, items: @Composable (firstItem: FocusRequester) -> Unit) {
     val firstItem = remember { FocusRequester() }
     var pressedInside by remember { mutableStateOf(false) }

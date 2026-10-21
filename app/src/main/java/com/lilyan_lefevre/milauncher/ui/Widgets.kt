@@ -2,11 +2,16 @@ package com.lilyan_lefevre.milauncher.ui
 
 import android.text.format.DateFormat
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -25,6 +30,7 @@ import androidx.tv.material3.Text
 import com.lilyan_lefevre.milauncher.R
 import com.lilyan_lefevre.milauncher.data.Weather
 import com.lilyan_lefevre.milauncher.data.WeatherCondition
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -33,7 +39,7 @@ import kotlinx.coroutines.delay
 
 /** Large home-screen widgets: clock and detailed weather. */
 @Composable
-fun LargeWidgets(weather: Weather?, modifier: Modifier = Modifier) {
+fun LargeWidgets(weather: Weather?, weekScreenTime: List<Long>?, modifier: Modifier = Modifier) {
     val now by rememberCurrentMinute()
     val formats = rememberClockFormats()
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
@@ -44,6 +50,7 @@ fun LargeWidgets(weather: Weather?, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (weekScreenTime != null) WeekScreenTime(weekScreenTime, Modifier.padding(top = 28.dp))
         }
         if (weather != null) WeatherDetails(weather, formats)
     }
@@ -137,3 +144,57 @@ private val WeatherCondition.label: Int
         WeatherCondition.SNOW -> R.string.weather_snow
         WeatherCondition.THUNDERSTORM -> R.string.weather_thunderstorm
     }
+
+/** This week's total screen time, with one bar per day and today in the accent color. */
+@Composable
+private fun WeekScreenTime(days: List<Long>, modifier: Modifier = Modifier) {
+    val dim = MaterialTheme.colorScheme.onSurfaceVariant
+    val longest = days.maxOrNull()?.takeIf { it > 0 } ?: 1L
+    val locale = LocalConfiguration.current.locales[0]
+    val dayLetter = remember(locale) { DateTimeFormatter.ofPattern("EEEEE", locale) }
+    val today = LocalDate.now()
+    Column(modifier) {
+        Text(
+            stringResource(R.string.week_screen_time, formatDuration(days.sum())),
+            style = MaterialTheme.typography.titleMedium,
+            color = dim
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 10.dp)) {
+            days.forEachIndexed { index, millis ->
+                val isToday = index == days.lastIndex
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(Modifier.height(BAR_HEIGHT), contentAlignment = Alignment.BottomCenter) {
+                        Box(
+                            Modifier
+                                .width(10.dp)
+                                // A minimal stub keeps empty days visible.
+                                .height((BAR_HEIGHT * (millis.toFloat() / longest)).coerceAtLeast(3.dp))
+                                .background(
+                                    if (isToday) MaterialTheme.colorScheme.primary else dim.copy(alpha = 0.45f),
+                                    RoundedCornerShape(3.dp)
+                                )
+                        )
+                    }
+                    Text(
+                        today.minusDays((days.lastIndex - index).toLong()).format(dayLetter),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isToday) MaterialTheme.colorScheme.onSurface else dim,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+private val BAR_HEIGHT = 32.dp
+
+@Composable
+internal fun formatDuration(millis: Long): String {
+    val minutes = millis / 60_000
+    return if (minutes >= 60) {
+        stringResource(R.string.duration_hours_minutes, minutes / 60, minutes % 60)
+    } else {
+        stringResource(R.string.duration_minutes, minutes)
+    }
+}
