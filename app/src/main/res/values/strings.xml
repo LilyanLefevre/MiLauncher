@@ -12,6 +12,7 @@
     <string name="move_right">Move right</string>
     <string name="hide">Hide</string>
     <string name="app_info">App info</string>
+    <string name="uninstall">Uninstall</string>
 
     <string name="temperature" translatable="false">%1$d°</string>
     <string name="min_max_24h">Min %1$d° · Max %2$d° over 24 h</string>

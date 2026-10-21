@@ -301,6 +301,12 @@ private fun appActions(app: InstalledApp, viewModel: LauncherViewModel, context:
         add(MenuAction(context.getString(R.string.app_info)) {
             context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${app.packageName}".toUri()))
         })
+        if (app.canUninstall) {
+            // System confirmation dialog; the list refreshes when the launcher resumes.
+            add(MenuAction(context.getString(R.string.uninstall)) {
+                context.startActivity(Intent(Intent.ACTION_DELETE, "package:${app.packageName}".toUri()))
+            })
+        }
     }
 }
 

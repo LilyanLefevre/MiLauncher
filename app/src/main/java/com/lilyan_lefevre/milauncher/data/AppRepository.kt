@@ -1,5 +1,6 @@
 package com.lilyan_lefevre.milauncher.data
 
+import android.content.pm.ApplicationInfo
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
@@ -14,6 +15,8 @@ data class InstalledApp(
     /** 16:9 TV banner when the app provides one, otherwise its icon. */
     val image: ImageBitmap,
     val hasBanner: Boolean,
+    /** False for system apps, which cannot be uninstalled. */
+    val canUninstall: Boolean = false,
 )
 
 class AppRepository(private val context: Context) {
@@ -47,6 +50,7 @@ class AppRepository(private val context: Context) {
             label = loadLabel(pm).toString(),
             image = drawable.toBitmap().asImageBitmap(),
             hasBanner = banner != null,
+            canUninstall = applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0,
         )
     }
 

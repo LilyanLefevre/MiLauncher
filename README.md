@@ -17,7 +17,8 @@ identiques, la vidéo est donc plus rapide que la réalité).
 - **Vue étendue** (flèche bas depuis la barre) : la page défile vers le haut, les widgets passent en version
   réduite, la barre remonte et toutes les apps apparaissent dessous.
   Flèche haut, Retour ou Home ramènent à l'accueil.
-- **Appui long** sur une app : ajouter/retirer des favoris, réordonner, masquer, infos.
+- **Appui long** sur une app : ajouter/retirer des favoris, réordonner, masquer, infos, désinstaller
+  (apps installées par l'utilisateur, avec la confirmation d'Android).
 - **Gérer les apps** : afficher ou masquer chaque app.
 - Sans favoris, la barre affiche les apps les plus récemment utilisées.
 - Interface en anglais et en français, selon la langue de la box ; l'heure suit le réglage 12 h / 24 h.
