@@ -12,8 +12,8 @@ android {
         applicationId = "com.lilyan_lefevre.milauncher"
         minSdk = 26 // java.time
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.3"
 
         // GitHub repository ("owner/name") whose latest release the in-app updater checks.
         val updateRepo = providers.gradleProperty("milauncher.updateRepo").getOrElse("LilyanLefevre/MiLauncher")
