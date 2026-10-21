@@ -12,7 +12,13 @@ identiques, la vidéo est donc plus rapide que la réalité).
 |---|---|
 | ![Accueil : grande horloge, météo et barre de favoris](docs/home.jpg) | ![Vue étendue : widgets réduits et toutes les apps](docs/expanded.jpg) |
 
-![Menu de l'appui long sur une app](docs/menu.jpg)
+| Appui long sur une app | Temps d'écran |
+|---|---|
+| ![Menu de l'appui long : favoris, masquer, infos, désinstaller](docs/menu.jpg) | ![Temps d'écran par app](docs/screen-time.jpg) |
+
+| Télécommande sur le téléphone | Appairage depuis la TV |
+|---|---|
+| <img src="docs/phone-remote.jpg" alt="Télécommande sur le téléphone : croix directionnelle, volume, médias et apps" width="300"> | ![Dialogue Télécommande avec QR code d'appairage (adresse et code floutés)](docs/remote-dialog.jpg) |
 
 - **Accueil** : grande horloge, météo détaillée (Open-Meteo, sans clé) et barre de 6 favoris en bas de l'écran.
 - **Vue étendue** (flèche bas depuis la barre) : la page défile vers le haut, les widgets passent en version
