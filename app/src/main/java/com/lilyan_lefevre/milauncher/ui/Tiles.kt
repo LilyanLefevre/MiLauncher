@@ -1,5 +1,7 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -30,8 +32,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.lilyan_lefevre.milauncher.data.InstalledApp
 
-val TileWidth = 120.dp
-val TileHeight = 68.dp
 val TileSpacing = 16.dp
 
 /** App tile: 16:9 banner, zoom and ring on focus, name shown only when focused. */
@@ -82,12 +82,13 @@ private fun TileFrame(
     val labelAlpha by animateFloatAsState(if (focused && showLabel) 1f else 0f, label = "labelAlpha")
 
     // Vertical padding leaves room for the zoom and ring: scrolling only sees the unscaled bounds.
-    Column(modifier.width(TileWidth).padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier.padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Card(
             onClick = onClick,
             onLongClick = onLongClick,
             modifier = Modifier
-                .size(TileWidth, TileHeight)
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
                 .onFocusChanged { focused = it.isFocused },
             shape = CardDefaults.shape(RoundedCornerShape(10.dp)),
             colors = CardDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
@@ -104,7 +105,8 @@ private fun TileFrame(
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 8.dp).alpha(labelAlpha),
+            // Clears the zoomed tile and its ring, which reach about 7 dp below the unscaled bounds.
+            modifier = Modifier.padding(top = 14.dp).alpha(labelAlpha),
         )
     }
 }

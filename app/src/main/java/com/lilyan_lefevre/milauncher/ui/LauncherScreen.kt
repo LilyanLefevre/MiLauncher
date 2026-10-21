@@ -1,5 +1,8 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.RowScope
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -224,13 +227,13 @@ private fun AllApps(
         rows.forEachIndexed { index, row ->
             AppRow(row, if (index == 0) firstItemFocus else null, appFocus, onClick, onLongClick)
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(TileSpacing)) {
+        TileRow(itemCount = 2) {
             ActionTile(
                 stringResource(R.string.manage_apps),
                 onManageApps,
-                if (apps.isEmpty()) Modifier.focusRequester(firstItemFocus) else Modifier,
+                Modifier.weight(1f).then(if (apps.isEmpty()) Modifier.focusRequester(firstItemFocus) else Modifier),
             )
-            ActionTile(stringResource(R.string.settings), onOpenSettings)
+            ActionTile(stringResource(R.string.settings), onOpenSettings, Modifier.weight(1f))
         }
     }
 }
@@ -244,7 +247,7 @@ private fun AppRow(
     onLongClick: (InstalledApp) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(TileSpacing)) {
+    TileRow(itemCount = apps.size, modifier = modifier) {
         apps.forEachIndexed { index, app ->
             // Keying by package keeps focus on the same app when a refresh reorders the list.
             key(app.packageName) {
@@ -253,11 +256,22 @@ private fun AppRow(
                     onClick = { onClick(app) },
                     onLongClick = { onLongClick(app) },
                     modifier = Modifier
+                        .weight(1f)
                         .then(if (index == 0 && firstItemFocus != null) Modifier.focusRequester(firstItemFocus) else Modifier)
                         .then(if (app.packageName == appFocus.packageName) Modifier.focusRequester(appFocus.requester) else Modifier),
                 )
             }
         }
+    }
+}
+
+/** Row of [COLUMNS] equal slots spanning the full width, so every row lines up with both edges. */
+@Composable
+private fun TileRow(itemCount: Int, modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(TileSpacing)) {
+        content()
+        // Empty slots keep tiles in a partial row as wide as in a full one.
+        repeat(COLUMNS - itemCount) { Spacer(Modifier.weight(1f)) }
     }
 }
 

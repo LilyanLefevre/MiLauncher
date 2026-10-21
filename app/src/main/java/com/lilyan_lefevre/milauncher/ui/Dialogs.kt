@@ -1,5 +1,11 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -66,13 +72,24 @@ fun ManageAppsDialog(
 @Composable
 private fun DialogFrame(title: String, onDismiss: () -> Unit, items: @Composable (firstItem: FocusRequester) -> Unit) {
     val firstItem = remember { FocusRequester() }
+    var pressedInside by remember { mutableStateOf(false) }
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             colors = SurfaceDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.width(480.dp),
         ) {
-            Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+            Column(
+                Modifier
+                    // The long press that opened the menu ends with a key release, which would click
+                    // the first item: swallow key events until a fresh press happens in the dialog.
+                    .onPreviewKeyEvent { event ->
+                        if (event.type == KeyEventType.KeyDown && event.nativeKeyEvent.repeatCount == 0) pressedInside = true
+                        !pressedInside
+                    }
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
                 Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(12.dp))
                 items(firstItem)
             }
