@@ -1,5 +1,9 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import com.lilyan_lefevre.milauncher.remote.RemoteServer
+import com.lilyan_lefevre.milauncher.LauncherApplication
+import java.net.Inet4Address
+import android.net.ConnectivityManager
 import com.lilyan_lefevre.milauncher.data.UpdateRepository
 import com.lilyan_lefevre.milauncher.data.AppRelease
 import androidx.core.net.toUri
@@ -40,6 +44,7 @@ data class LauncherUiState(
     /** A newer GitHub release, if any. */
     val update: AppRelease? = null,
     val updating: Boolean = false,
+    val remote: RemoteInfo = RemoteInfo(),
 ) {
     private val visible by lazy { apps.filter { it.packageName !in hidden } }
 
@@ -54,6 +59,9 @@ data class LauncherUiState(
 }
 
 data class ScreenTime(val period: ScreenTimePeriod, val usage: List<AppUsage>)
+
+/** Phone remote status; [url] is null while the box has no IPv4 address. */
+data class RemoteInfo(val enabled: Boolean = false, val url: String? = null, val pin: String = "")
 
 class LauncherViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -128,6 +136,34 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
             val usage = screenTimeRepository.usage(period)
             _state.update { it.copy(screenTime = ScreenTime(period, usage)) }
         }
+    }
+
+    fun refreshRemote() {
+        val server = getApplication<LauncherApplication>().remoteServer
+        val address = localIpv4Address()
+        _state.update {
+            it.copy(remote = RemoteInfo(server.isRunning, address?.let { ip -> "http://$ip:${RemoteServer.PORT}" }, prefs.remotePin))
+        }
+    }
+
+    fun setRemoteEnabled(enabled: Boolean) {
+        val server = getApplication<LauncherApplication>().remoteServer
+        prefs.remoteEnabled = enabled
+        if (enabled) runCatching { server.start() } else server.stop()
+        refreshRemote()
+    }
+
+    fun newRemotePin() {
+        prefs.newRemotePin()
+        refreshRemote()
+    }
+
+    private fun localIpv4Address(): String? {
+        val connectivity = getApplication<Application>().getSystemService(ConnectivityManager::class.java)
+        return connectivity.getLinkProperties(connectivity.activeNetwork)?.linkAddresses
+            ?.map { it.address }
+            ?.firstOrNull { it is Inet4Address && !it.isLoopbackAddress }
+            ?.hostAddress
     }
 
     fun onHomePressed() {

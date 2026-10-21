@@ -20,10 +20,25 @@ identiques, la vidéo est donc plus rapide que la réalité).
 - **Appui long** sur une app : ajouter/retirer des favoris, réordonner, masquer, infos, désinstaller
   (apps installées par l'utilisateur, avec la confirmation d'Android).
 - **Gérer les apps** : afficher ou masquer chaque app.
+- **Temps d'écran** : temps passé dans chaque app aujourd'hui ou sur 7 jours, calculé sur la box.
+- **Télécommande sur le téléphone** (désactivée par défaut) : une page web servie par la box sur le réseau local
+  pour lancer une app, ouvrir un lien sur la TV ou revenir à l'accueil, protégée par un code affiché sur la TV.
+- **Mises à jour** : le launcher vérifie la dernière release GitHub et propose de l'installer.
 - Sans favoris, la barre affiche les apps les plus récemment utilisées.
 - Interface en anglais et en français, selon la langue de la box ; l'heure suit le réglage 12 h / 24 h.
-- La météo utilise une position approximative déduite de l'adresse IP ([ipwho.is](https://ipwho.is)),
-  mise en cache : aucune permission de localisation.
+
+## Vie privée
+
+Aucune pub, aucun compte, aucune statistique envoyée. Les seules requêtes réseau :
+
+- [ipwho.is](https://ipwho.is) une fois, pour une position approximative mise en cache (aucune permission de
+  localisation), puis [Open-Meteo](https://open-meteo.com) toutes les 30 minutes pour la météo ;
+- l'API GitHub toutes les 12 heures, pour la dernière release du dépôt réglé par la propriété Gradle
+  `milauncher.updateRepo`.
+
+Le temps d'écran est calculé sur la box à partir des statistiques d'usage d'Android et n'en sort pas.
+La télécommande écoute sur le port 8765, refuse toute adresse hors du réseau local, exige le code à 6 chiffres
+à chaque appel et se bloque une minute après 5 codes faux ; le trafic n'est pas chiffré (HTTP sur le réseau local).
 
 Kotlin, Jetpack Compose et [Compose for TV](https://developer.android.com/jetpack/androidx/releases/tv).
 
@@ -41,8 +56,11 @@ Puis l'installer sur la box :
 adb connect <ip-de-la-box>:5555
 adb install -r milauncher.apk
 
-# Tri « récents d'abord » : autorise la lecture des statistiques d'usage.
+# Tri « récents d'abord » et temps d'écran : autorise la lecture des statistiques d'usage.
 adb shell appops set com.lilyan_lefevre.milauncher GET_USAGE_STATS allow
+
+# Mises à jour depuis le launcher : autorise l'installation d'apps inconnues.
+adb shell appops set com.lilyan_lefevre.milauncher REQUEST_INSTALL_PACKAGES allow
 ```
 
 ## Signature et CI

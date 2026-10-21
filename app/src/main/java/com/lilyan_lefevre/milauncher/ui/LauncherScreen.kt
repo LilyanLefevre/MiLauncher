@@ -1,6 +1,5 @@
 package com.lilyan_lefevre.milauncher.ui
 
-import com.lilyan_lefevre.milauncher.data.AppRelease
 import com.lilyan_lefevre.milauncher.data.ScreenTimePeriod
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
@@ -70,15 +69,19 @@ private val HEADER_GAP = 24.dp
 fun LauncherScreen(viewModel: LauncherViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    LauncherContent(
-        state = state,
-        homePressed = viewModel.homePressed,
-        onLaunch = viewModel::launch,
-        menuActions = { appActions(it, viewModel, context) },
-        onToggleHidden = viewModel::setHidden,
-        onRequestScreenTime = viewModel::loadScreenTime,
-        onInstallUpdate = viewModel::installUpdate,
-    )
+    val actions = remember(viewModel, context) {
+        object : LauncherActions {
+            override fun launch(app: InstalledApp) = viewModel.launch(app)
+            override fun menuActions(app: InstalledApp) = appActions(app, viewModel, context)
+            override fun setHidden(app: InstalledApp, hidden: Boolean) = viewModel.setHidden(app, hidden)
+            override fun loadScreenTime(period: ScreenTimePeriod) = viewModel.loadScreenTime(period)
+            override fun installUpdate() = viewModel.installUpdate()
+            override fun refreshRemote() = viewModel.refreshRemote()
+            override fun setRemoteEnabled(enabled: Boolean) = viewModel.setRemoteEnabled(enabled)
+            override fun newRemotePin() = viewModel.newRemotePin()
+        }
+    }
+    LauncherContent(state, viewModel.homePressed, actions)
 }
 
 /**
@@ -91,11 +94,7 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
 fun LauncherContent(
     state: LauncherUiState,
     homePressed: Flow<Unit>,
-    onLaunch: (InstalledApp) -> Unit,
-    menuActions: (InstalledApp) -> List<MenuAction>,
-    onToggleHidden: (app: InstalledApp, hide: Boolean) -> Unit,
-    onRequestScreenTime: (ScreenTimePeriod) -> Unit,
-    onInstallUpdate: () -> Unit,
+    actions: LauncherActions,
     initiallyExpanded: Boolean = false,
 ) {
     val context = LocalContext.current
@@ -104,6 +103,7 @@ fun LauncherContent(
     var menuApp by remember { mutableStateOf<InstalledApp?>(null) }
     var managingApps by remember { mutableStateOf(false) }
     var showingScreenTime by remember { mutableStateOf(false) }
+    var showingRemote by remember { mutableStateOf(false) }
     val barFocus = remember { FocusRequester() }
     val gridFocus = remember { FocusRequester() }
     val appFocus = remember { AppFocus() }
@@ -159,7 +159,7 @@ fun LauncherContent(
                 apps = state.bar,
                 firstItemFocus = barFocus,
                 appFocus = appFocus,
-                onClick = onLaunch,
+                onClick = actions::launch,
                 onLongClick = { menuApp = it },
                 modifier = Modifier
                     .onSizeChanged { barHeight = with(density) { it.height.toDp() } }
@@ -169,14 +169,21 @@ fun LauncherContent(
                 apps = state.others,
                 firstItemFocus = gridFocus,
                 appFocus = appFocus,
-                onClick = onLaunch,
+                onClick = actions::launch,
                 onLongClick = { menuApp = it },
-                onManageApps = { managingApps = true },
-                onScreenTime = { onRequestScreenTime(ScreenTimePeriod.TODAY); showingScreenTime = true },
-                update = state.update,
-                updating = state.updating,
-                onInstallUpdate = onInstallUpdate,
-                onOpenSettings = { context.startActivity(Intent(Settings.ACTION_SETTINGS)) },
+                tools = buildList {
+                    add(MenuAction(stringResource(R.string.manage_apps)) { managingApps = true })
+                    add(MenuAction(stringResource(R.string.screen_time)) {
+                        actions.loadScreenTime(ScreenTimePeriod.TODAY)
+                        showingScreenTime = true
+                    })
+                    add(MenuAction(stringResource(R.string.remote)) { actions.refreshRemote(); showingRemote = true })
+                    add(MenuAction(stringResource(R.string.settings)) { context.startActivity(Intent(Settings.ACTION_SETTINGS)) })
+                    state.update?.let { update ->
+                        val label = if (state.updating) R.string.update_downloading else R.string.update_to
+                        add(MenuAction(stringResource(label, update.version)) { actions.installUpdate() })
+                    }
+                },
                 modifier = Modifier
                     .height(shift)
                     .fade { progress }
@@ -196,7 +203,7 @@ fun LauncherContent(
     menuApp?.let { app ->
         AppMenuDialog(
             title = app.label,
-            actions = menuActions(app),
+            actions = actions.menuActions(app),
             onDismiss = { menuApp = null; appFocus.packageName = app.packageName },
         )
     }
@@ -204,15 +211,23 @@ fun LauncherContent(
         ScreenTimeDialog(
             screenTime = state.screenTime,
             apps = state.apps,
-            onSelectPeriod = onRequestScreenTime,
+            onSelectPeriod = actions::loadScreenTime,
             onDismiss = { showingScreenTime = false },
+        )
+    }
+    if (showingRemote) {
+        RemoteDialog(
+            remote = state.remote,
+            onEnable = actions::setRemoteEnabled,
+            onNewPin = actions::newRemotePin,
+            onDismiss = { showingRemote = false },
         )
     }
     if (managingApps) {
         ManageAppsDialog(
             apps = state.apps.sortedBy { it.label.lowercase() },
             hidden = state.hidden,
-            onToggle = onToggleHidden,
+            onToggle = actions::setHidden,
             onDismiss = { managingApps = false },
         )
     }
@@ -240,12 +255,7 @@ private fun AllApps(
     appFocus: AppFocus,
     onClick: (InstalledApp) -> Unit,
     onLongClick: (InstalledApp) -> Unit,
-    onManageApps: () -> Unit,
-    onScreenTime: () -> Unit,
-    update: AppRelease?,
-    updating: Boolean,
-    onInstallUpdate: () -> Unit,
-    onOpenSettings: () -> Unit,
+    tools: List<MenuAction>,
     modifier: Modifier = Modifier,
 ) = Column(modifier) {
     Text(
@@ -260,19 +270,13 @@ private fun AllApps(
         rows.forEachIndexed { index, row ->
             AppRow(row, if (index == 0) firstItemFocus else null, appFocus, onClick, onLongClick)
         }
-        TileRow(itemCount = if (update != null) 4 else 3) {
-            ActionTile(
-                stringResource(R.string.manage_apps),
-                onManageApps,
-                Modifier.weight(1f).then(if (apps.isEmpty()) Modifier.focusRequester(firstItemFocus) else Modifier),
-            )
-            ActionTile(stringResource(R.string.screen_time), onScreenTime, Modifier.weight(1f))
-            ActionTile(stringResource(R.string.settings), onOpenSettings, Modifier.weight(1f))
-            if (update != null) {
+        // Launcher tools after the apps; the first one takes the grid focus when no app is left.
+        TileRow(itemCount = tools.size) {
+            tools.forEachIndexed { index, tool ->
                 ActionTile(
-                    if (updating) stringResource(R.string.update_downloading) else stringResource(R.string.update_to, update.version),
-                    onInstallUpdate,
-                    Modifier.weight(1f),
+                    tool.label,
+                    tool.onClick,
+                    Modifier.weight(1f).then(if (apps.isEmpty() && index == 0) Modifier.focusRequester(firstItemFocus) else Modifier),
                 )
             }
         }
@@ -344,13 +348,13 @@ private fun appActions(app: InstalledApp, viewModel: LauncherViewModel, context:
 @Preview(name = "Home", device = Devices.TV_1080p)
 @Composable
 private fun LauncherHomePreview() {
-    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, {}, {}) }
+    LauncherTheme { LauncherContent(previewState, emptyFlow(), object : LauncherActions {}) }
 }
 
 @Preview(name = "Expanded", device = Devices.TV_1080p)
 @Composable
 private fun LauncherExpandedPreview() {
-    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, {}, {}, initiallyExpanded = true) }
+    LauncherTheme { LauncherContent(previewState, emptyFlow(), object : LauncherActions {}, initiallyExpanded = true) }
 }
 
 private val previewState by lazy {

@@ -26,13 +26,21 @@ class AppRepository(private val context: Context) {
     /** Launchable apps, most recently used first, then alphabetically. */
     fun loadApps(): List<InstalledApp> {
         val lastUsed = lastUsedTimes()
+        return launcherActivities()
+            .map { it.toInstalledApp() }
+            .sortedWith(compareByDescending<InstalledApp> { lastUsed[it.packageName] ?: 0L }.thenBy { it.label.lowercase() })
+    }
+
+    /** Package name to label of every launchable app, without loading banners. */
+    fun labels(): Map<String, String> = launcherActivities().associate { it.packageName to it.loadLabel(pm).toString() }
+
+    /** One launcher activity per package, TV entry points first, excluding this launcher. */
+    private fun launcherActivities(): List<ActivityInfo> {
         val seen = mutableSetOf(context.packageName)
         return listOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)
             .flatMap { pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(it), 0) }
             .map { it.activityInfo }
             .filter { seen.add(it.packageName) }
-            .map { it.toInstalledApp() }
-            .sortedWith(compareByDescending<InstalledApp> { lastUsed[it.packageName] ?: 0L }.thenBy { it.label.lowercase() })
     }
 
     fun launch(packageName: String) {

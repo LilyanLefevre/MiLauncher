@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiLauncher</title>
+<style>
+  :root { --bg: #0b0d12; --tile: #1a1e27; --text: #f2f4f8; --dim: #8a93a6; --accent: #5b8cff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--text);
+         font: 16px/1.4 system-ui, -apple-system, Roboto, sans-serif; }
+  h1 { font-size: 20px; font-weight: 600; margin: 4px 0 16px; }
+  h2 { font-size: 13px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; margin: 24px 0 8px; }
+  input, button { font: inherit; color: inherit; border: 0; border-radius: 12px; }
+  input { width: 100%; padding: 14px; background: var(--tile); outline: 2px solid transparent; }
+  input:focus { outline-color: var(--accent); }
+  button { padding: 14px 16px; background: var(--tile); cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; font-weight: 600; }
+  button:active { transform: scale(.98); }
+  .row { display: flex; gap: 8px; }
+  .row input { flex: 1; }
+  .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .apps button { text-align: left; min-height: 56px; }
+  .status { min-height: 1.4em; margin-top: 12px; color: var(--dim); }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<h1>MiLauncher</h1>
+
+<section id="pairing">
+  <p data-i18n="pairHint"></p>
+  <div class="row">
+    <input id="pin" inputmode="numeric" maxlength="6" autocomplete="off">
+    <button class="primary" id="pair" data-i18n="pair"></button>
+  </div>
+</section>
+
+<section id="remote" class="hidden">
+  <button class="primary" id="home" data-i18n="home"></button>
+  <h2 data-i18n="openLink"></h2>
+  <div class="row">
+    <input id="url" type="url" placeholder="https://youtube.com/watch?v=…">
+    <button class="primary" id="open" data-i18n="open"></button>
+  </div>
+  <h2 data-i18n="apps"></h2>
+  <div class="apps" id="apps"></div>
+</section>
+
+<div class="status" id="status" role="status"></div>
+
+<script>
+  const strings = {
+    en: { pairHint: "Enter the code shown on the TV under Remote.", pair: "Pair", home: "Home",
+          openLink: "Open a link on the TV", open: "Open", apps: "Apps", wrongPin: "Wrong code.",
+          locked: "Too many attempts, try again in a minute.", done: "Done.", error: "The TV did not respond." },
+    fr: { pairHint: "Saisis le code affiché sur la TV, dans Télécommande.", pair: "Appairer", home: "Accueil",
+          openLink: "Ouvrir un lien sur la TV", open: "Ouvrir", apps: "Apps", wrongPin: "Code incorrect.",
+          locked: "Trop d'essais, réessaie dans une minute.", done: "C'est fait.", error: "La TV n'a pas répondu." },
+  };
+  const t = strings[navigator.language.slice(0, 2)] || strings.en;
+  document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t[el.dataset.i18n]);
+
+  const $ = id => document.getElementById(id);
+  const say = text => $("status").textContent = text;
+  // Kept on this phone only, so pairing survives a page reload.
+  let pin = localStorage.getItem("pin") || "";
+
+  async function api(method, path, body) {
+    const response = await fetch(path, {
+      method, headers: { "X-Pin": pin, "Content-Type": "application/json" },
+      body: body && JSON.stringify(body),
+    });
+    if (response.status === 401) { localStorage.removeItem("pin"); showPairing(); throw t.wrongPin; }
+    if (response.status === 429) throw t.locked;
+    if (!response.ok) throw t.error;
+    return response.json();
+  }
+
+  function showPairing() { $("pairing").classList.remove("hidden"); $("remote").classList.add("hidden"); }
+
+  async function connect() {
+    try {
+      const apps = await api("GET", "/api/apps");
+      localStorage.setItem("pin", pin);
+      $("pairing").classList.add("hidden");
+      $("remote").classList.remove("hidden");
+      $("apps").replaceChildren(...apps.map(app => {
+        const button = document.createElement("button");
+        button.textContent = app.label;
+        button.onclick = () => run(api("POST", "/api/launch", { package: app.package }));
+        return button;
+      }));
+      say("");
+    } catch (message) { say(typeof message === "string" ? message : t.error); }
+  }
+
+  async function run(promise) {
+    try { await promise; say(t.done); } catch (message) { say(typeof message === "string" ? message : t.error); }
+  }
+
+  $("pair").onclick = () => { pin = $("pin").value.trim(); connect(); };
+  $("pin").onkeydown = e => { if (e.key === "Enter") $("pair").click(); };
+  $("home").onclick = () => run(api("POST", "/api/home"));
+  $("open").onclick = () => run(api("POST", "/api/open", { url: $("url").value }));
+  if (pin) connect();
+</script>
+</body>
+</html>

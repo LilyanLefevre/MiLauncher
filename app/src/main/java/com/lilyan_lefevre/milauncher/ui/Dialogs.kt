@@ -125,6 +125,33 @@ fun ScreenTimeDialog(
     }
 }
 
+/** Turns the phone remote on or off and shows how to reach it. */
+@Composable
+fun RemoteDialog(remote: RemoteInfo, onEnable: (Boolean) -> Unit, onNewPin: () -> Unit, onDismiss: () -> Unit) {
+    DialogFrame(stringResource(R.string.remote), onDismiss) { firstItem ->
+        ListItem(
+            selected = false,
+            onClick = { onEnable(!remote.enabled) },
+            headlineContent = { Text(stringResource(R.string.remote_enable)) },
+            trailingContent = { Switch(checked = remote.enabled, onCheckedChange = null) },
+            modifier = Modifier.focusRequester(firstItem),
+        )
+        if (remote.enabled) {
+            val dim = MaterialTheme.colorScheme.onSurfaceVariant
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 16.dp)) {
+                if (remote.url == null) {
+                    Text(stringResource(R.string.remote_no_network), color = dim)
+                } else {
+                    Text(stringResource(R.string.remote_instructions), color = dim)
+                    Text(remote.url, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 8.dp))
+                    Text(stringResource(R.string.remote_pin, remote.pin), style = MaterialTheme.typography.headlineSmall)
+                }
+            }
+            ListItem(selected = false, onClick = onNewPin, headlineContent = { Text(stringResource(R.string.remote_new_pin)) })
+        }
+    }
+}
+
 private val ScreenTimePeriod.label: Int
     @StringRes get() = when (this) {
         ScreenTimePeriod.TODAY -> R.string.today

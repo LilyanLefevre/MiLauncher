@@ -6,6 +6,8 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Shows the box address for the phone remote. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Lets the long-press menu open the system uninstall dialog. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <!-- In-app updates from the GitHub releases. -->
@@ -26,6 +28,7 @@
     </queries>
 
     <application
+        android:name=".LauncherApplication"
         android:allowBackup="true"
         android:banner="@drawable/banner"
         android:icon="@mipmap/ic_launcher"

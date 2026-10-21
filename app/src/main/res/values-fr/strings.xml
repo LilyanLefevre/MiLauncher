@@ -21,6 +21,13 @@
     <string name="update_to">Mettre à jour (%1$s)</string>
     <string name="update_downloading">Téléchargement…</string>
 
+    <string name="remote">Télécommande</string>
+    <string name="remote_enable">Télécommande sur le téléphone</string>
+    <string name="remote_instructions">Sur un téléphone connecté au même réseau, ouvre :</string>
+    <string name="remote_pin">Code : %1$s</string>
+    <string name="remote_new_pin">Nouveau code</string>
+    <string name="remote_no_network">La box n\'a pas de connexion réseau.</string>
+
     <string name="min_max_24h">Min %1$d° · Max %2$d° sur 24 h</string>
 
     <string name="weather_clear">Ciel dégagé</string>

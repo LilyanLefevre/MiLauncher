@@ -25,6 +25,13 @@
     <string name="update_to">Update to %1$s</string>
     <string name="update_downloading">Downloading…</string>
 
+    <string name="remote">Remote</string>
+    <string name="remote_enable">Phone remote</string>
+    <string name="remote_instructions">On a phone connected to the same network, open:</string>
+    <string name="remote_pin">Code: %1$s</string>
+    <string name="remote_new_pin">New code</string>
+    <string name="remote_no_network">The box has no network connection.</string>
+
     <string name="temperature" translatable="false">%1$d°</string>
     <string name="min_max_24h">Min %1$d° · Max %2$d° over 24 h</string>
 
