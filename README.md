@@ -1,6 +1,7 @@
 # MiLauncher
 
 Launcher Android TV minimaliste, sans pub ni recommandations, conçu pour une Xiaomi Mi Box S (Google TV).
+Kotlin, Jetpack Compose et [Compose for TV](https://developer.android.com/jetpack/androidx/releases/tv).
 
 ![Démo sur la box : passage à la vue étendue, appui long, retour à l'accueil](docs/demo.gif)
 
@@ -48,8 +49,6 @@ Faute de HTTPS sur le réseau local, Chrome ne propose pas l'installation automa
 les gestes pour l'ajouter à l'écran d'accueil (et un bouton « Installer » si le navigateur le permet).
 Le volume est celui de la box ; « précédent » et « suivant » sont les touches média, transmises à l'app qui joue.
 
-Kotlin, Jetpack Compose et [Compose for TV](https://developer.android.com/jetpack/androidx/releases/tv).
-
 ## Permissions
 
 Les fonctions qui en ont besoin proposent de les accorder depuis la TV ; les commandes adb font la même chose.
@@ -85,14 +84,14 @@ Puis l'installer sur la box :
 ```sh
 adb connect <ip-de-la-box>:5555
 adb install -r milauncher.apk
-
 ```
 
 Puis accorder les [permissions](#permissions), depuis la TV ou par adb.
 
 ## Signature et CI
 
-GitHub Actions (`.github/workflows/release.yml`) lance les tests et construit l'APK release à chaque push.
+GitHub Actions (`.github/workflows/release.yml`) vérifie le style (ktlint), lance les tests et construit l'APK release
+à chaque push.
 L'APK est disponible dans les artefacts du run ; pousser un tag `v*` publie aussi une release GitHub.
 
 L'APK est signé avec une clé de release fixe, fournie par ces secrets du dépôt :
@@ -109,7 +108,7 @@ En local, Gradle lit les variables `SIGNING_KEYSTORE` (chemin du fichier), `SIGN
 
 Android refuse de mettre à jour une app signée avec une autre clé : pour passer d'un build local signé en debug
 à un APK de la CI, désinstaller d'abord l'app (`adb uninstall com.lilyan_lefevre.milauncher`), ce qui efface
-les favoris, puis relancer la commande `appops` ci-dessus.
+les favoris, puis accorder de nouveau les [permissions](#permissions).
 
 ## En faire l'écran d'accueil
 
