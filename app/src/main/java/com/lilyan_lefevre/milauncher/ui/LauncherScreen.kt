@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.platform.LocalContext
@@ -144,7 +145,7 @@ fun LauncherContent(
                 LargeWidgets(
                     weather = state.weather,
                     // Fades out during the first half of the motion.
-                    modifier = Modifier.graphicsLayer { alpha = (1f - progress * 2f).coerceAtLeast(0f) },
+                    modifier = Modifier.fade { (1f - progress * 2f).coerceAtLeast(0f) },
                 )
             }
             AppRow(
@@ -167,7 +168,7 @@ fun LauncherContent(
                 onOpenSettings = { context.startActivity(Intent(Settings.ACTION_SETTINGS)) },
                 modifier = Modifier
                     .height(shift)
-                    .graphicsLayer { alpha = progress }
+                    .fade { progress }
                     .onFocusChanged { if (it.hasFocus) expanded = true },
             )
         }
@@ -177,7 +178,7 @@ fun LauncherContent(
             modifier = Modifier
                 .onSizeChanged { compactHeight = with(density) { it.height.toDp() } }
                 // Fades in during the second half of the motion.
-                .graphicsLayer { alpha = (progress * 2f - 1f).coerceIn(0f, 1f) },
+                .fade { (progress * 2f - 1f).coerceIn(0f, 1f) },
         )
     }
 
@@ -196,6 +197,15 @@ fun LauncherContent(
             onDismiss = { managingApps = false },
         )
     }
+}
+
+/**
+ * Alpha applied to each draw call instead of an offscreen layer: a layer would clip focused tiles,
+ * whose zoom and ring extend past the bounds, for the whole fade.
+ */
+private fun Modifier.fade(alpha: () -> Float) = graphicsLayer {
+    this.alpha = alpha()
+    compositingStrategy = CompositingStrategy.ModulateAlpha
 }
 
 /** Focus request for a given app, wherever it is displayed. */
