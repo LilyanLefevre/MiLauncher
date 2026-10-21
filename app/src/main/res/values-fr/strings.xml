@@ -18,6 +18,9 @@
     <string name="screen_time_total">Total : %1$s</string>
     <string name="screen_time_empty">Aucune utilisation sur cette période.</string>
 
+    <string name="update_to">Mettre à jour (%1$s)</string>
+    <string name="update_downloading">Téléchargement…</string>
+
     <string name="min_max_24h">Min %1$d° · Max %2$d° sur 24 h</string>
 
     <string name="weather_clear">Ciel dégagé</string>

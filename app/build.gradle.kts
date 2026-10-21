@@ -14,6 +14,10 @@ android {
         targetSdk = 36
         versionCode = 3
         versionName = "1.2"
+
+        // GitHub repository ("owner/name") whose latest release the in-app updater checks.
+        val updateRepo = providers.gradleProperty("milauncher.updateRepo").getOrElse("LilyanLefevre/MiLauncher")
+        buildConfigField("String", "UPDATE_REPO", "\"$updateRepo\"")
     }
 
     // Release key from the environment (CI secrets), see README. Without it, fall back to the debug key.
@@ -43,6 +47,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

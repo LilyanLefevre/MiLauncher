@@ -22,6 +22,9 @@
     <string name="duration_hours_minutes" translatable="false">%1$d h %2$02d min</string>
     <string name="duration_minutes" translatable="false">%1$d min</string>
 
+    <string name="update_to">Update to %1$s</string>
+    <string name="update_downloading">Downloading…</string>
+
     <string name="temperature" translatable="false">%1$d°</string>
     <string name="min_max_24h">Min %1$d° · Max %2$d° over 24 h</string>
 

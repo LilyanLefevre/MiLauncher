@@ -1,5 +1,11 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import com.lilyan_lefevre.milauncher.data.UpdateRepository
+import com.lilyan_lefevre.milauncher.data.AppRelease
+import androidx.core.net.toUri
+import android.provider.Settings
+import android.content.Intent
+import android.content.ActivityNotFoundException
 import com.lilyan_lefevre.milauncher.data.ScreenTimeRepository
 import com.lilyan_lefevre.milauncher.data.ScreenTimePeriod
 import com.lilyan_lefevre.milauncher.data.AppUsage
@@ -19,6 +25,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 const val MAX_FAVORITES = 6
@@ -30,6 +37,9 @@ data class LauncherUiState(
     val weather: Weather? = null,
     /** Loaded on demand when the screen time dialog opens. */
     val screenTime: ScreenTime? = null,
+    /** A newer GitHub release, if any. */
+    val update: AppRelease? = null,
+    val updating: Boolean = false,
 ) {
     private val visible by lazy { apps.filter { it.packageName !in hidden } }
 
@@ -51,6 +61,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     private val prefs = LauncherPrefs(application)
     private val weatherRepository = WeatherRepository(application)
     private val screenTimeRepository = ScreenTimeRepository(application)
+    private val updateRepository = UpdateRepository(application)
 
     private val _state = MutableStateFlow(LauncherUiState(favorites = prefs.favorites, hidden = prefs.hidden))
     val state: StateFlow<LauncherUiState> = _state
@@ -67,6 +78,40 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
                 // Retry soon if the network was not ready yet (device boot).
                 delay(if (weather != null) 30.minutes else 1.minutes)
             }
+        }
+        viewModelScope.launch {
+            while (true) {
+                val release = updateRepository.newerRelease()
+                _state.update { it.copy(update = release) }
+                delay(12.hours)
+            }
+        }
+    }
+
+    /** Installs the pending update, or opens the "install unknown apps" setting if not allowed yet. */
+    fun installUpdate() {
+        val release = _state.value.update ?: return
+        if (!updateRepository.canInstall()) {
+            openUnknownSourcesSetting()
+            return
+        }
+        _state.update { it.copy(updating = true) }
+        viewModelScope.launch {
+            // On success the system confirmation takes over, then the new version restarts the launcher.
+            runCatching { updateRepository.install(release) }
+            _state.update { it.copy(updating = false) }
+        }
+    }
+
+    private fun openUnknownSourcesSetting() {
+        val app = getApplication<Application>()
+        val uri = "package:${app.packageName}".toUri()
+        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            app.startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            // Some TV builds lack this screen: the app details page links to the same setting.
+            app.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     }
 

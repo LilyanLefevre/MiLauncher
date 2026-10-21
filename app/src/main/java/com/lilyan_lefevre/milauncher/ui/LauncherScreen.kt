@@ -1,5 +1,6 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import com.lilyan_lefevre.milauncher.data.AppRelease
 import com.lilyan_lefevre.milauncher.data.ScreenTimePeriod
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
@@ -76,6 +77,7 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
         menuActions = { appActions(it, viewModel, context) },
         onToggleHidden = viewModel::setHidden,
         onRequestScreenTime = viewModel::loadScreenTime,
+        onInstallUpdate = viewModel::installUpdate,
     )
 }
 
@@ -93,6 +95,7 @@ fun LauncherContent(
     menuActions: (InstalledApp) -> List<MenuAction>,
     onToggleHidden: (app: InstalledApp, hide: Boolean) -> Unit,
     onRequestScreenTime: (ScreenTimePeriod) -> Unit,
+    onInstallUpdate: () -> Unit,
     initiallyExpanded: Boolean = false,
 ) {
     val context = LocalContext.current
@@ -170,6 +173,9 @@ fun LauncherContent(
                 onLongClick = { menuApp = it },
                 onManageApps = { managingApps = true },
                 onScreenTime = { onRequestScreenTime(ScreenTimePeriod.TODAY); showingScreenTime = true },
+                update = state.update,
+                updating = state.updating,
+                onInstallUpdate = onInstallUpdate,
                 onOpenSettings = { context.startActivity(Intent(Settings.ACTION_SETTINGS)) },
                 modifier = Modifier
                     .height(shift)
@@ -236,6 +242,9 @@ private fun AllApps(
     onLongClick: (InstalledApp) -> Unit,
     onManageApps: () -> Unit,
     onScreenTime: () -> Unit,
+    update: AppRelease?,
+    updating: Boolean,
+    onInstallUpdate: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) = Column(modifier) {
@@ -251,7 +260,7 @@ private fun AllApps(
         rows.forEachIndexed { index, row ->
             AppRow(row, if (index == 0) firstItemFocus else null, appFocus, onClick, onLongClick)
         }
-        TileRow(itemCount = 3) {
+        TileRow(itemCount = if (update != null) 4 else 3) {
             ActionTile(
                 stringResource(R.string.manage_apps),
                 onManageApps,
@@ -259,6 +268,13 @@ private fun AllApps(
             )
             ActionTile(stringResource(R.string.screen_time), onScreenTime, Modifier.weight(1f))
             ActionTile(stringResource(R.string.settings), onOpenSettings, Modifier.weight(1f))
+            if (update != null) {
+                ActionTile(
+                    if (updating) stringResource(R.string.update_downloading) else stringResource(R.string.update_to, update.version),
+                    onInstallUpdate,
+                    Modifier.weight(1f),
+                )
+            }
         }
     }
 }
@@ -328,13 +344,13 @@ private fun appActions(app: InstalledApp, viewModel: LauncherViewModel, context:
 @Preview(name = "Home", device = Devices.TV_1080p)
 @Composable
 private fun LauncherHomePreview() {
-    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, {}) }
+    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, {}, {}) }
 }
 
 @Preview(name = "Expanded", device = Devices.TV_1080p)
 @Composable
 private fun LauncherExpandedPreview() {
-    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, {}, initiallyExpanded = true) }
+    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, {}, {}, initiallyExpanded = true) }
 }
 
 private val previewState by lazy {
