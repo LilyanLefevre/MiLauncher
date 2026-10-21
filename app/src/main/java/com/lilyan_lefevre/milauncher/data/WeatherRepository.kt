@@ -2,11 +2,11 @@ package com.lilyan_lefevre.milauncher.data
 
 import android.content.Context
 import androidx.core.content.edit
+import java.net.URL
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.net.URL
-import kotlin.math.roundToInt
 
 data class Weather(
     val temperature: Int,
@@ -14,7 +14,7 @@ data class Weather(
     val city: String?,
     val min: Int,
     val max: Int,
-    val hourly: List<HourlyForecast>,
+    val hourly: List<HourlyForecast>
 )
 
 /** [hour] is the local hour of day, 0 to 23. */
@@ -73,7 +73,7 @@ internal fun parseForecast(json: String, city: String?): Weather {
         min = next24h.min(),
         max = next24h.max(),
         hourly = (1..4).map { now + it * 3 }.filter { it < temps.length() }
-            .map { HourlyForecast(hour = times.getString(it).substring(11, 13).toInt(), temperature = temp(it)) },
+            .map { HourlyForecast(hour = times.getString(it).substring(11, 13).toInt(), temperature = temp(it)) }
     )
 }
 

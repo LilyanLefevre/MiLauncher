@@ -6,13 +6,13 @@ import androidx.core.net.toUri
 import com.lilyan_lefevre.milauncher.MainActivity
 import com.lilyan_lefevre.milauncher.data.AppRepository
 import com.lilyan_lefevre.milauncher.data.LauncherPrefs
-import org.json.JSONArray
-import org.json.JSONObject
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * Local-network remote for the phone: serves a page and a small JSON API to list and launch apps,
@@ -24,6 +24,7 @@ class RemoteServer(private val context: Context) {
     private val prefs = LauncherPrefs(context)
     private val guard = PinGuard()
     private val keys = RemoteKeys(context)
+
     // ponytail: images cached for the process lifetime; an updated app keeps its old image until restart.
     private val images = ConcurrentHashMap<String, ByteArray>()
     private var socket: ServerSocket? = null
@@ -85,17 +86,20 @@ class RemoteServer(private val context: Context) {
         val visible = apps.labels() - prefs.hidden
         return when ("${request.method} ${request.path}") {
             "GET /api/status" -> HttpResponse.json(200, JSONObject().put("navigation", keys.navigationAvailable).toString())
+
             "GET /api/image" -> {
                 // Same allow-list as launching: no image of a hidden or unknown package.
                 val pkg = request.query["package"]?.takeIf { it in visible } ?: return HttpResponse.status(404)
                 val png = images[pkg] ?: apps.imagePng(pkg)?.also { images[pkg] = it } ?: return HttpResponse.status(404)
                 HttpResponse(200, "image/png", png)
             }
+
             "POST /api/key" -> when (keys.press(JSONObject(request.body).getString("key"))) {
                 RemoteKeys.Result.DONE -> HttpResponse.status(200)
                 RemoteKeys.Result.NEEDS_ACCESSIBILITY -> HttpResponse.json(409, "{\"ok\":false,\"error\":\"accessibility\"}")
                 RemoteKeys.Result.UNKNOWN -> HttpResponse.status(400)
             }
+
             "GET /api/apps" -> {
                 // Same order as on the TV: favorites as arranged, then the other apps, most recent first.
                 val favorites = prefs.favorites.filter { it in visible }
@@ -104,6 +108,7 @@ class RemoteServer(private val context: Context) {
                     .forEach { list.put(JSONObject().put("package", it).put("label", visible.getValue(it))) }
                 HttpResponse.json(200, list.toString())
             }
+
             "POST /api/launch" -> {
                 val pkg = JSONObject(request.body).getString("package")
                 // Only apps the launcher shows: the API cannot start arbitrary components.
@@ -111,16 +116,19 @@ class RemoteServer(private val context: Context) {
                 apps.launch(pkg)
                 HttpResponse.status(200)
             }
+
             "POST /api/open" -> {
                 val url = JSONObject(request.body).getString("url").trim()
                 if (!url.startsWith("https://") && !url.startsWith("http://")) return HttpResponse.status(400)
                 context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 HttpResponse.status(200)
             }
+
             "POST /api/home" -> {
                 context.startActivity(Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 HttpResponse.status(200)
             }
+
             else -> HttpResponse.status(404)
         }
     }
@@ -135,7 +143,7 @@ class RemoteServer(private val context: Context) {
             "/manifest.webmanifest" to ("manifest.webmanifest" to "application/manifest+json"),
             "/icon-192.png" to ("icon-192.png" to "image/png"),
             "/icon-512.png" to ("icon-512.png" to "image/png"),
-            "/apple-touch-icon.png" to ("apple-touch-icon.png" to "image/png"),
+            "/apple-touch-icon.png" to ("apple-touch-icon.png" to "image/png")
         )
     }
 }

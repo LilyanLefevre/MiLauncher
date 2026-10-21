@@ -61,11 +61,13 @@ internal fun foregroundTime(events: List<UsageEvent>, start: Long, end: Long): M
     for (event in events.sortedBy { it.time }) {
         when (event.kind) {
             UsageEvent.Kind.RESUMED -> openSince.putIfAbsent(event.packageName, event.time)
+
             UsageEvent.Kind.PAUSED -> {
                 // A pause before any resume means the app was already in front when the window opened.
                 if (event.packageName !in seen && event.packageName !in openSince) openSince[event.packageName] = start
                 close(event.packageName, event.time)
             }
+
             UsageEvent.Kind.SCREEN_OFF -> openSince.keys.toList().forEach { close(it, event.time) }
         }
         if (event.kind != UsageEvent.Kind.SCREEN_OFF) seen += event.packageName

@@ -26,7 +26,7 @@ class WeatherParsingTest {
         assertEquals(46, weather.max)
         assertEquals(
             listOf(HourlyForecast(1, 25), HourlyForecast(4, 28), HourlyForecast(7, 31), HourlyForecast(10, 34)),
-            weather.hourly,
+            weather.hourly
         )
     }
 

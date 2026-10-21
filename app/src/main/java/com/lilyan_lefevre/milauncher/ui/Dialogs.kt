@@ -52,9 +52,12 @@ fun AppMenuDialog(title: String, actions: List<MenuAction>, onDismiss: () -> Uni
         actions.forEachIndexed { index, action ->
             ListItem(
                 selected = false,
-                onClick = { onDismiss(); action.onClick() },
+                onClick = {
+                    onDismiss()
+                    action.onClick()
+                },
                 headlineContent = { Text(action.label) },
-                modifier = if (index == 0) Modifier.focusRequester(firstItem) else Modifier,
+                modifier = if (index == 0) Modifier.focusRequester(firstItem) else Modifier
             )
         }
     }
@@ -66,7 +69,7 @@ fun ManageAppsDialog(
     apps: List<InstalledApp>,
     hidden: Set<String>,
     onToggle: (app: InstalledApp, hide: Boolean) -> Unit,
-    onDismiss: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     DialogFrame(stringResource(R.string.shown_apps), onDismiss) { firstItem ->
         apps.forEachIndexed { index, app ->
@@ -76,7 +79,7 @@ fun ManageAppsDialog(
                 onClick = { onToggle(app, shown) },
                 headlineContent = { Text(app.label) },
                 trailingContent = { Switch(checked = shown, onCheckedChange = null) },
-                modifier = if (index == 0) Modifier.focusRequester(firstItem) else Modifier,
+                modifier = if (index == 0) Modifier.focusRequester(firstItem) else Modifier
             )
         }
     }
@@ -90,7 +93,7 @@ fun ScreenTimeDialog(
     usageAccess: Boolean,
     onGrantUsageAccess: () -> Unit,
     onSelectPeriod: (ScreenTimePeriod) -> Unit,
-    onDismiss: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     // Only launchable apps: system services (voice assistant, keyboard…) are not screen time.
     val labels = apps.associate { it.packageName to it.label }
@@ -107,14 +110,17 @@ fun ScreenTimeDialog(
                 selected = screenTime?.period == period,
                 onClick = { onSelectPeriod(period) },
                 headlineContent = { Text(stringResource(period.label)) },
-                modifier = if (index == 0 && usageAccess) Modifier.focusRequester(firstItem) else Modifier,
+                modifier = if (index == 0 && usageAccess) Modifier.focusRequester(firstItem) else Modifier
             )
         }
         Text(
-            if (screenTime != null && usage.isEmpty()) stringResource(R.string.screen_time_empty)
-            else stringResource(R.string.screen_time_total, formatDuration(usage.sumOf { it.foregroundMillis })),
+            if (screenTime != null && usage.isEmpty()) {
+                stringResource(R.string.screen_time_empty)
+            } else {
+                stringResource(R.string.screen_time_total, formatDuration(usage.sumOf { it.foregroundMillis }))
+            },
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp)
         )
         usage.forEach { app ->
             // Focusable rows so the D-pad can scroll through a long list.
@@ -129,9 +135,9 @@ fun ScreenTimeDialog(
                             .padding(top = 6.dp)
                             .fillMaxWidth(app.foregroundMillis.toFloat() / longest)
                             .height(4.dp)
-                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)),
+                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
                     )
-                },
+                }
             )
         }
     }
@@ -144,7 +150,7 @@ fun RemoteDialog(
     onEnable: (Boolean) -> Unit,
     onNewPin: () -> Unit,
     onEnableNavigation: () -> Unit,
-    onDismiss: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     DialogFrame(stringResource(R.string.remote), onDismiss, width = 600.dp) { firstItem ->
         ListItem(
@@ -152,7 +158,7 @@ fun RemoteDialog(
             onClick = { onEnable(!remote.enabled) },
             headlineContent = { Text(stringResource(R.string.remote_enable)) },
             trailingContent = { Switch(checked = remote.enabled, onCheckedChange = null) },
-            modifier = Modifier.focusRequester(firstItem),
+            modifier = Modifier.focusRequester(firstItem)
         )
         if (remote.enabled) {
             val dim = MaterialTheme.colorScheme.onSurfaceVariant
@@ -164,7 +170,7 @@ fun RemoteDialog(
                         QrCode(
                             content = remote.pairingUrl!!,
                             contentDescription = stringResource(R.string.remote_qr_description),
-                            modifier = Modifier.size(168.dp).clip(RoundedCornerShape(8.dp)),
+                            modifier = Modifier.size(168.dp).clip(RoundedCornerShape(8.dp))
                         )
                         Column {
                             Text(stringResource(R.string.remote_instructions), color = dim)
@@ -173,7 +179,7 @@ fun RemoteDialog(
                                 remote.url.removePrefix("http://"),
                                 style = MaterialTheme.typography.titleLarge,
                                 maxLines = 1,
-                                modifier = Modifier.padding(vertical = 8.dp),
+                                modifier = Modifier.padding(vertical = 8.dp)
                             )
                             Text(stringResource(R.string.remote_pin, remote.pin), style = MaterialTheme.typography.titleLarge)
                         }
@@ -196,7 +202,7 @@ private fun PermissionItem(@StringRes title: Int, @StringRes hint: Int, onClick:
         onClick = onClick,
         headlineContent = { Text(stringResource(title)) },
         supportingContent = { Text(stringResource(hint)) },
-        modifier = modifier,
+        modifier = modifier
     )
 }
 
@@ -209,17 +215,15 @@ private val ScreenTimePeriod.label: Int
 @Composable
 private fun formatDuration(millis: Long): String {
     val minutes = millis / 60_000
-    return if (minutes >= 60) stringResource(R.string.duration_hours_minutes, minutes / 60, minutes % 60)
-    else stringResource(R.string.duration_minutes, minutes)
+    return if (minutes >= 60) {
+        stringResource(R.string.duration_hours_minutes, minutes / 60, minutes % 60)
+    } else {
+        stringResource(R.string.duration_minutes, minutes)
+    }
 }
 
 @Composable
-private fun DialogFrame(
-    title: String,
-    onDismiss: () -> Unit,
-    width: Dp = 480.dp,
-    items: @Composable (firstItem: FocusRequester) -> Unit,
-) {
+private fun DialogFrame(title: String, onDismiss: () -> Unit, width: Dp = 480.dp, items: @Composable (firstItem: FocusRequester) -> Unit) {
     val firstItem = remember { FocusRequester() }
     var pressedInside by remember { mutableStateOf(false) }
     // The platform width cap would override the requested width.
@@ -227,7 +231,7 @@ private fun DialogFrame(
         Surface(
             shape = RoundedCornerShape(16.dp),
             colors = SurfaceDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.width(width),
+            modifier = Modifier.width(width)
         ) {
             Column(
                 Modifier
@@ -238,7 +242,7 @@ private fun DialogFrame(
                         !pressedInside
                     }
                     .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
             ) {
                 Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(12.dp))
                 items(firstItem)

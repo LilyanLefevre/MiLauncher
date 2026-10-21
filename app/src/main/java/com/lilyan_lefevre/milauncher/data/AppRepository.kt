@@ -18,7 +18,7 @@ data class InstalledApp(
     val image: ImageBitmap,
     val hasBanner: Boolean,
     /** False for system apps, which cannot be uninstalled. */
-    val canUninstall: Boolean = false,
+    val canUninstall: Boolean = false
 )
 
 class AppRepository(private val context: Context) {
@@ -41,7 +41,10 @@ class AppRepository(private val context: Context) {
         val width = sourceWidth.coerceAtMost(maxWidth)
         val height = (drawable.intrinsicHeight.coerceAtLeast(1) * width / sourceWidth).coerceAtLeast(1)
         val bitmap = drawable.toBitmap(width, height)
-        return ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it); it.toByteArray() }
+        return ByteArrayOutputStream().use {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            it.toByteArray()
+        }
     }
 
     /** Package name to label of every launchable app, without loading banners, in the same order as [loadApps]. */
@@ -83,7 +86,7 @@ class AppRepository(private val context: Context) {
             label = loadLabel(pm).toString(),
             image = drawable.toBitmap().asImageBitmap(),
             hasBanner = banner != null,
-            canUninstall = applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0,
+            canUninstall = applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
         )
     }
 

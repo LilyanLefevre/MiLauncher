@@ -13,7 +13,7 @@ internal data class HttpRequest(
     val path: String,
     val headers: Map<String, String>,
     val body: String,
-    val query: Map<String, String> = emptyMap(),
+    val query: Map<String, String> = emptyMap()
 )
 
 internal class HttpResponse(val status: Int, val contentType: String, val body: ByteArray) {
@@ -60,8 +60,14 @@ internal fun readRequest(input: InputStream): HttpRequest? {
 
 internal fun writeResponse(output: OutputStream, response: HttpResponse) {
     val reason = when (response.status) {
-        200 -> "OK"; 400 -> "Bad Request"; 401 -> "Unauthorized"; 403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"
-        429 -> "Too Many Requests"; else -> "Error"
+        200 -> "OK"
+        400 -> "Bad Request"
+        401 -> "Unauthorized"
+        403 -> "Forbidden"
+        404 -> "Not Found"
+        409 -> "Conflict"
+        429 -> "Too Many Requests"
+        else -> "Error"
     }
     val head = "HTTP/1.1 ${response.status} $reason\r\n" +
         "Content-Type: ${response.contentType}\r\n" +

@@ -21,6 +21,9 @@ import com.lilyan_lefevre.milauncher.data.UpdateRepository
 import com.lilyan_lefevre.milauncher.data.Weather
 import com.lilyan_lefevre.milauncher.data.WeatherRepository
 import com.lilyan_lefevre.milauncher.remote.RemoteServer
+import java.net.Inet4Address
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,9 +32,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.net.Inet4Address
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 
 const val MAX_FAVORITES = 6
 
@@ -47,7 +47,7 @@ data class LauncherUiState(
     val updating: Boolean = false,
     val remote: RemoteInfo = RemoteInfo(),
     /** Needed for the recency order and screen time; granted in the system settings. */
-    val usageAccess: Boolean = true,
+    val usageAccess: Boolean = true
 ) {
     private val visible by lazy { apps.filter { it.packageName !in hidden } }
 
@@ -67,12 +67,7 @@ data class ScreenTime(val period: ScreenTimePeriod, val usage: List<AppUsage>)
  * Phone remote status; [url] is null while the box has no IPv4 address, and [navigation] tells whether
  * the accessibility service needed for arrows and OK is on.
  */
-data class RemoteInfo(
-    val enabled: Boolean = false,
-    val url: String? = null,
-    val pin: String = "",
-    val navigation: Boolean = false,
-) {
+data class RemoteInfo(val enabled: Boolean = false, val url: String? = null, val pin: String = "", val navigation: Boolean = false) {
     /** Opens the remote already paired: the code sits in the fragment, which browsers never send. */
     val pairingUrl: String? get() = url?.let { "$it/#pin=$pin" }
 }
@@ -89,6 +84,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     val state: StateFlow<LauncherUiState> = _state
 
     private val _homePressed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
     /** Emitted when Home is pressed while the launcher is already shown. */
     val homePressed: SharedFlow<Unit> = _homePressed
 
@@ -167,8 +163,8 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
                     enabled = server.isRunning,
                     url = address?.let { ip -> "http://$ip:${RemoteServer.PORT}" },
                     pin = prefs.remotePin,
-                    navigation = Permissions.hasRemoteAccessibility(getApplication()),
-                ),
+                    navigation = Permissions.hasRemoteAccessibility(getApplication())
+                )
             )
         }
     }

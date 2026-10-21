@@ -36,12 +36,7 @@ val TileSpacing = 16.dp
 
 /** App tile: 16:9 banner, zoom and ring on focus, name shown only when focused. */
 @Composable
-fun AppTile(
-    app: InstalledApp,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun AppTile(app: InstalledApp, onClick: () -> Unit, onLongClick: () -> Unit, modifier: Modifier = Modifier) {
     TileFrame(label = app.label, showLabel = true, onClick = onClick, onLongClick = onLongClick, modifier = modifier) {
         Image(
             bitmap = app.image,
@@ -49,7 +44,7 @@ fun AppTile(
             contentScale = if (app.hasBanner) ContentScale.Crop else ContentScale.Fit,
             modifier = Modifier
                 .fillMaxSize()
-                .then(if (app.hasBanner) Modifier else Modifier.padding(horizontal = 16.dp, vertical = 12.dp)),
+                .then(if (app.hasBanner) Modifier else Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
         )
     }
 }
@@ -63,7 +58,7 @@ fun ActionTile(label: String, onClick: () -> Unit, modifier: Modifier = Modifier
                 text = label,
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -76,7 +71,7 @@ private fun TileFrame(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
     var focused by remember { mutableStateOf(false) }
     val labelAlpha by animateFloatAsState(if (focused && showLabel) 1f else 0f, label = "labelAlpha")
@@ -95,8 +90,12 @@ private fun TileFrame(
             scale = CardDefaults.scale(focusedScale = 1.1f),
             // Ring offset from the tile so it stays visible on light banners.
             border = CardDefaults.border(
-                focusedBorder = Border(BorderStroke(2.dp, MaterialTheme.colorScheme.border), inset = 4.dp, shape = RoundedCornerShape(14.dp)),
-            ),
+                focusedBorder = Border(
+                    BorderStroke(2.dp, MaterialTheme.colorScheme.border),
+                    inset = 4.dp,
+                    shape = RoundedCornerShape(14.dp)
+                )
+            )
         ) {
             content()
         }
@@ -106,7 +105,7 @@ private fun TileFrame(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             // Clears the zoomed tile and its ring, which reach about 7 dp below the unscaled bounds.
-            modifier = Modifier.padding(top = 14.dp).alpha(labelAlpha),
+            modifier = Modifier.padding(top = 14.dp).alpha(labelAlpha)
         )
     }
 }

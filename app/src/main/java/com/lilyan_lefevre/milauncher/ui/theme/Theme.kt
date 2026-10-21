@@ -13,7 +13,7 @@ private val LauncherColors = darkColorScheme(
     surface = Color(0xFF1A1E27),
     onSurface = Color(0xFFF2F4F8),
     onSurfaceVariant = Color(0xFF8A93A6),
-    border = Color.White,
+    border = Color.White
 )
 
 @Composable

@@ -25,11 +25,11 @@ import androidx.tv.material3.Text
 import com.lilyan_lefevre.milauncher.R
 import com.lilyan_lefevre.milauncher.data.Weather
 import com.lilyan_lefevre.milauncher.data.WeatherCondition
-import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import kotlinx.coroutines.delay
 
 /** Large home-screen widgets: clock and detailed weather. */
 @Composable
@@ -39,7 +39,11 @@ fun LargeWidgets(weather: Weather?, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
         Column {
             Text(now.format(formats.time), fontSize = 112.sp, fontWeight = FontWeight.Light, lineHeight = 112.sp)
-            Text(now.format(formats.date), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                now.format(formats.date),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
         if (weather != null) WeatherDetails(weather, formats)
     }
@@ -54,9 +58,14 @@ fun CompactWidgets(weather: Weather?, modifier: Modifier = Modifier) {
         Text("${now.format(formats.time)}  ·  ${now.format(formats.date)}", style = MaterialTheme.typography.titleLarge)
         if (weather != null) {
             Text(
-                listOfNotNull(stringResource(R.string.temperature, weather.temperature), weather.condition?.let { stringResource(it.label) })
+                listOfNotNull(
+                    stringResource(R.string.temperature, weather.temperature),
+                    weather.condition?.let {
+                        stringResource(it.label)
+                    }
+                )
                     .joinToString("  ·  "),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleLarge
             )
         }
     }
@@ -70,13 +79,13 @@ private fun WeatherDetails(weather: Weather, formats: ClockFormats) {
         Text(
             listOfNotNull(weather.condition?.let { stringResource(it.label) }, weather.city).joinToString(" · "),
             style = MaterialTheme.typography.titleLarge,
-            color = dim,
+            color = dim
         )
         Text(
             stringResource(R.string.min_max_24h, weather.min, weather.max),
             style = MaterialTheme.typography.bodyLarge,
             color = dim,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = 8.dp)
         )
         Row(horizontalArrangement = Arrangement.spacedBy(24.dp), modifier = Modifier.padding(top = 12.dp)) {
             weather.hourly.forEach {
@@ -112,7 +121,7 @@ private fun rememberClockFormats(): ClockFormats {
         ClockFormats(
             time = formatter(if (is24Hour) "Hm" else "hm"),
             date = formatter("EEEEdMMMM"),
-            hour = formatter(if (is24Hour) "H" else "ha"),
+            hour = formatter(if (is24Hour) "H" else "ha")
         )
     }
 }

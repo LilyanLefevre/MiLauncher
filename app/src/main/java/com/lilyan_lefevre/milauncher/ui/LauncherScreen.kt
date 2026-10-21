@@ -94,12 +94,7 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
  * Moving back up to the bar, Back or Home return to the home state.
  */
 @Composable
-fun LauncherContent(
-    state: LauncherUiState,
-    homePressed: Flow<Unit>,
-    actions: LauncherActions,
-    initiallyExpanded: Boolean = false,
-) {
+fun LauncherContent(state: LauncherUiState, homePressed: Flow<Unit>, actions: LauncherActions, initiallyExpanded: Boolean = false) {
     val context = LocalContext.current
     // Derived from focus: true while the grid holds focus, false while the bar does.
     var expanded by remember { mutableStateOf(initiallyExpanded) }
@@ -131,7 +126,7 @@ fun LauncherContent(
     val progress by animateFloatAsState(
         targetValue = if (expanded) 1f else 0f,
         animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
-        label = "expandProgress",
+        label = "expandProgress"
     )
     val density = LocalDensity.current
     var barHeight by remember { mutableStateOf(0.dp) }
@@ -141,7 +136,7 @@ fun LauncherContent(
         Modifier
             .fillMaxSize()
             .background(Brush.radialGradient(listOf(Color(0xFF1B2333), MaterialTheme.colorScheme.background), radius = 1400f))
-            .padding(horizontal = 56.dp, vertical = 40.dp),
+            .padding(horizontal = 56.dp, vertical = 40.dp)
     ) {
         // Distance travelled by the page; also the height left for the grid once expanded.
         val pageHeight = maxHeight
@@ -151,14 +146,14 @@ fun LauncherContent(
         Column(
             Modifier
                 .wrapContentHeight(align = Alignment.Top, unbounded = true)
-                .graphicsLayer { translationY = -progress * shift.toPx() },
+                .graphicsLayer { translationY = -progress * shift.toPx() }
         ) {
             // First screen: widgets at the top, the bar right below this box at the bottom edge.
             Box(Modifier.height(pageHeight - barHeight)) {
                 LargeWidgets(
                     weather = state.weather,
                     // Fades out during the first half of the motion.
-                    modifier = Modifier.fade { (1f - progress * 2f).coerceAtLeast(0f) },
+                    modifier = Modifier.fade { (1f - progress * 2f).coerceAtLeast(0f) }
                 )
             }
             AppRow(
@@ -169,7 +164,7 @@ fun LauncherContent(
                 onLongClick = { menuApp = it },
                 modifier = Modifier
                     .onSizeChanged { barHeight = with(density) { it.height.toDp() } }
-                    .onFocusChanged { if (it.hasFocus) expanded = false },
+                    .onFocusChanged { if (it.hasFocus) expanded = false }
             )
             AllApps(
                 apps = state.others,
@@ -180,11 +175,18 @@ fun LauncherContent(
                 onLongClick = { menuApp = it },
                 tools = buildList {
                     add(MenuAction(stringResource(R.string.manage_apps)) { managingApps = true })
-                    add(MenuAction(stringResource(R.string.screen_time)) {
-                        actions.loadScreenTime(ScreenTimePeriod.TODAY)
-                        showingScreenTime = true
-                    })
-                    add(MenuAction(stringResource(R.string.remote)) { actions.refreshRemote(); showingRemote = true })
+                    add(
+                        MenuAction(stringResource(R.string.screen_time)) {
+                            actions.loadScreenTime(ScreenTimePeriod.TODAY)
+                            showingScreenTime = true
+                        }
+                    )
+                    add(
+                        MenuAction(stringResource(R.string.remote)) {
+                            actions.refreshRemote()
+                            showingRemote = true
+                        }
+                    )
                     add(MenuAction(stringResource(R.string.settings)) { context.startActivity(Intent(Settings.ACTION_SETTINGS)) })
                     state.update?.let { update ->
                         val label = if (state.updating) R.string.update_downloading else R.string.update_to
@@ -194,7 +196,7 @@ fun LauncherContent(
                 modifier = Modifier
                     .height(shift)
                     .fade { progress }
-                    .onFocusChanged { if (it.hasFocus) expanded = true },
+                    .onFocusChanged { if (it.hasFocus) expanded = true }
             )
         }
 
@@ -203,7 +205,7 @@ fun LauncherContent(
             modifier = Modifier
                 .onSizeChanged { compactHeight = with(density) { it.height.toDp() } }
                 // Fades in during the second half of the motion.
-                .fade { (progress * 2f - 1f).coerceIn(0f, 1f) },
+                .fade { (progress * 2f - 1f).coerceIn(0f, 1f) }
         )
     }
 
@@ -211,7 +213,10 @@ fun LauncherContent(
         AppMenuDialog(
             title = app.label,
             actions = actions.menuActions(app),
-            onDismiss = { menuApp = null; appFocus.packageName = app.packageName },
+            onDismiss = {
+                menuApp = null
+                appFocus.packageName = app.packageName
+            }
         )
     }
     if (showingScreenTime) {
@@ -221,7 +226,7 @@ fun LauncherContent(
             usageAccess = state.usageAccess,
             onGrantUsageAccess = actions::openUsageAccessSettings,
             onSelectPeriod = actions::loadScreenTime,
-            onDismiss = { showingScreenTime = false },
+            onDismiss = { showingScreenTime = false }
         )
     }
     if (showingRemote) {
@@ -230,7 +235,7 @@ fun LauncherContent(
             onEnable = actions::setRemoteEnabled,
             onNewPin = actions::newRemotePin,
             onEnableNavigation = actions::openAccessibilitySettings,
-            onDismiss = { showingRemote = false },
+            onDismiss = { showingRemote = false }
         )
     }
     if (managingApps) {
@@ -238,7 +243,7 @@ fun LauncherContent(
             apps = state.apps.sortedBy { it.label.lowercase() },
             hidden = state.hidden,
             onToggle = actions::setHidden,
-            onDismiss = { managingApps = false },
+            onDismiss = { managingApps = false }
         )
     }
 }
@@ -267,13 +272,13 @@ private fun AllApps(
     onClick: (InstalledApp) -> Unit,
     onLongClick: (InstalledApp) -> Unit,
     tools: List<MenuAction>,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) = Column(modifier) {
     Text(
         stringResource(R.string.all_apps),
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
     )
     // Plain (non-lazy) grid: a few dozen apps at most, and initial focus stays reliable.
     Column(Modifier.weight(1f).verticalScroll(scrollState)) {
@@ -287,7 +292,7 @@ private fun AllApps(
                 ActionTile(
                     tool.label,
                     tool.onClick,
-                    Modifier.weight(1f).then(if (apps.isEmpty() && index == 0) Modifier.focusRequester(firstItemFocus) else Modifier),
+                    Modifier.weight(1f).then(if (apps.isEmpty() && index == 0) Modifier.focusRequester(firstItemFocus) else Modifier)
                 )
             }
         }
@@ -301,7 +306,7 @@ private fun AppRow(
     appFocus: AppFocus,
     onClick: (InstalledApp) -> Unit,
     onLongClick: (InstalledApp) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     TileRow(itemCount = apps.size, modifier = modifier) {
         apps.forEachIndexed { index, app ->
@@ -314,7 +319,7 @@ private fun AppRow(
                     modifier = Modifier
                         .weight(1f)
                         .then(if (index == 0 && firstItemFocus != null) Modifier.focusRequester(firstItemFocus) else Modifier)
-                        .then(if (app.packageName == appFocus.packageName) Modifier.focusRequester(appFocus.requester) else Modifier),
+                        .then(if (app.packageName == appFocus.packageName) Modifier.focusRequester(appFocus.requester) else Modifier)
                 )
             }
         }
@@ -336,22 +341,35 @@ private fun appActions(app: InstalledApp, viewModel: LauncherViewModel, context:
     val position = favorites.indexOf(app.packageName)
     return buildList {
         when {
-            position < 0 && viewModel.canAddFavorite() -> add(MenuAction(context.getString(R.string.add_to_favorites)) { viewModel.addFavorite(app) })
+            position < 0 && viewModel.canAddFavorite() -> add(
+                MenuAction(context.getString(R.string.add_to_favorites)) {
+                    viewModel.addFavorite(app)
+                }
+            )
+
             position >= 0 -> {
                 add(MenuAction(context.getString(R.string.remove_from_favorites)) { viewModel.removeFavorite(app) })
                 if (position > 0) add(MenuAction(context.getString(R.string.move_left)) { viewModel.moveFavorite(app, -1) })
-                if (position < favorites.lastIndex) add(MenuAction(context.getString(R.string.move_right)) { viewModel.moveFavorite(app, 1) })
+                if (position <
+                    favorites.lastIndex
+                ) {
+                    add(MenuAction(context.getString(R.string.move_right)) { viewModel.moveFavorite(app, 1) })
+                }
             }
         }
         add(MenuAction(context.getString(R.string.hide)) { viewModel.setHidden(app, hidden = true) })
-        add(MenuAction(context.getString(R.string.app_info)) {
-            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${app.packageName}".toUri()))
-        })
+        add(
+            MenuAction(context.getString(R.string.app_info)) {
+                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${app.packageName}".toUri()))
+            }
+        )
         if (app.canUninstall) {
             // System confirmation dialog; the list refreshes when the launcher resumes.
-            add(MenuAction(context.getString(R.string.uninstall)) {
-                context.startActivity(Intent(Intent.ACTION_DELETE, "package:${app.packageName}".toUri()))
-            })
+            add(
+                MenuAction(context.getString(R.string.uninstall)) {
+                    context.startActivity(Intent(Intent.ACTION_DELETE, "package:${app.packageName}".toUri()))
+                }
+            )
         }
     }
 }
@@ -376,9 +394,13 @@ private val previewState by lazy {
         apps = apps,
         favorites = apps.take(4).map { it.packageName },
         weather = Weather(
-            temperature = 12, condition = WeatherCondition.RAIN, city = "Lyon", min = 9, max = 16,
-            hourly = listOf(HourlyForecast(2, 11), HourlyForecast(5, 11), HourlyForecast(8, 10), HourlyForecast(11, 11)),
-        ),
+            temperature = 12,
+            condition = WeatherCondition.RAIN,
+            city = "Lyon",
+            min = 9,
+            max = 16,
+            hourly = listOf(HourlyForecast(2, 11), HourlyForecast(5, 11), HourlyForecast(8, 10), HourlyForecast(11, 11))
+        )
     )
 }
 

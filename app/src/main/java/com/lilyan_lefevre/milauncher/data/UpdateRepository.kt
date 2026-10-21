@@ -6,10 +6,10 @@ import android.content.Intent
 import android.content.pm.PackageInstaller
 import com.lilyan_lefevre.milauncher.BuildConfig
 import com.lilyan_lefevre.milauncher.UpdateStatusReceiver
+import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.net.URL
 
 data class AppRelease(val version: String, val apkUrl: String)
 
@@ -48,7 +48,7 @@ class UpdateRepository(private val context: Context) {
                 sessionId,
                 Intent(context, UpdateStatusReceiver::class.java),
                 // Mutable: the installer adds the status extras to this intent.
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
             )
             session.commit(callback.intentSender)
         }

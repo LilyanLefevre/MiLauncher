@@ -14,7 +14,8 @@ class UpdateStatusReceiver : BroadcastReceiver() {
         val confirm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
         } else {
-            @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_INTENT)
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(Intent.EXTRA_INTENT)
         } ?: return
         context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }

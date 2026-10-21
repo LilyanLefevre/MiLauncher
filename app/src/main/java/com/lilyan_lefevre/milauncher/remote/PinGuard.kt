@@ -6,7 +6,7 @@ import java.security.MessageDigest
 internal class PinGuard(
     private val maxFailures: Int = 5,
     private val lockMillis: Long = 60_000,
-    private val now: () -> Long = System::currentTimeMillis,
+    private val now: () -> Long = System::currentTimeMillis
 ) {
     private var failures = 0
     private var lockedUntil = 0L
