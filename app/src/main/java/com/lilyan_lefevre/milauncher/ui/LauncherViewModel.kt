@@ -1,5 +1,6 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import com.lilyan_lefevre.milauncher.data.Permissions
 import com.lilyan_lefevre.milauncher.remote.RemoteServer
 import com.lilyan_lefevre.milauncher.LauncherApplication
 import java.net.Inet4Address
@@ -45,6 +46,8 @@ data class LauncherUiState(
     val update: AppRelease? = null,
     val updating: Boolean = false,
     val remote: RemoteInfo = RemoteInfo(),
+    /** Needed for the recency order and screen time; granted in the system settings. */
+    val usageAccess: Boolean = true,
 ) {
     private val visible by lazy { apps.filter { it.packageName !in hidden } }
 
@@ -60,8 +63,16 @@ data class LauncherUiState(
 
 data class ScreenTime(val period: ScreenTimePeriod, val usage: List<AppUsage>)
 
-/** Phone remote status; [url] is null while the box has no IPv4 address. */
-data class RemoteInfo(val enabled: Boolean = false, val url: String? = null, val pin: String = "") {
+/**
+ * Phone remote status; [url] is null while the box has no IPv4 address, and [navigation] tells whether
+ * the accessibility service needed for arrows and OK is on.
+ */
+data class RemoteInfo(
+    val enabled: Boolean = false,
+    val url: String? = null,
+    val pin: String = "",
+    val navigation: Boolean = false,
+) {
     /** Opens the remote already paired: the code sits in the fragment, which browsers never send. */
     val pairingUrl: String? get() = url?.let { "$it/#pin=$pin" }
 }
@@ -130,9 +141,15 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
             val loaded = apps.loadApps()
-            _state.update { it.copy(apps = loaded) }
+            _state.update { it.copy(apps = loaded, usageAccess = Permissions.hasUsageAccess(getApplication())) }
         }
+        // Also catches permissions granted in the settings while the launcher was in the background.
+        refreshRemote()
     }
+
+    fun openUsageAccessSettings() = getApplication<Application>().startActivity(Permissions.usageAccessSettings())
+
+    fun openAccessibilitySettings() = getApplication<Application>().startActivity(Permissions.accessibilitySettings())
 
     fun loadScreenTime(period: ScreenTimePeriod) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -145,7 +162,14 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         val server = getApplication<LauncherApplication>().remoteServer
         val address = localIpv4Address()
         _state.update {
-            it.copy(remote = RemoteInfo(server.isRunning, address?.let { ip -> "http://$ip:${RemoteServer.PORT}" }, prefs.remotePin))
+            it.copy(
+                remote = RemoteInfo(
+                    enabled = server.isRunning,
+                    url = address?.let { ip -> "http://$ip:${RemoteServer.PORT}" },
+                    pin = prefs.remotePin,
+                    navigation = Permissions.hasRemoteAccessibility(getApplication()),
+                ),
+            )
         }
     }
 

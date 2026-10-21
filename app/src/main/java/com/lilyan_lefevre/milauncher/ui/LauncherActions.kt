@@ -13,4 +13,6 @@ interface LauncherActions {
     fun refreshRemote() {}
     fun setRemoteEnabled(enabled: Boolean) {}
     fun newRemotePin() {}
+    fun openUsageAccessSettings() {}
+    fun openAccessibilitySettings() {}
 }

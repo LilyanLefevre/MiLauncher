@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -79,6 +80,8 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
             override fun refreshRemote() = viewModel.refreshRemote()
             override fun setRemoteEnabled(enabled: Boolean) = viewModel.setRemoteEnabled(enabled)
             override fun newRemotePin() = viewModel.newRemotePin()
+            override fun openUsageAccessSettings() = viewModel.openUsageAccessSettings()
+            override fun openAccessibilitySettings() = viewModel.openAccessibilitySettings()
         }
     }
     LauncherContent(state, viewModel.homePressed, actions)
@@ -107,10 +110,13 @@ fun LauncherContent(
     val barFocus = remember { FocusRequester() }
     val gridFocus = remember { FocusRequester() }
     val appFocus = remember { AppFocus() }
+    val gridScroll = rememberScrollState()
 
     BackHandler { barFocus.requestFocus() }
     LaunchedEffect(Unit) { homePressed.collect { barFocus.requestFocus() } }
     LaunchedEffect(state.bar.isNotEmpty()) { if (state.bar.isNotEmpty()) barFocus.requestFocus() }
+    // Back on the home state, the grid starts again from its first row.
+    LaunchedEffect(expanded) { if (!expanded) gridScroll.scrollTo(0) }
     // After a menu action the app may have moved: follow it, or fall back to the bar.
     LaunchedEffect(appFocus.packageName) {
         val target = appFocus.packageName ?: return@LaunchedEffect
@@ -168,6 +174,7 @@ fun LauncherContent(
             AllApps(
                 apps = state.others,
                 firstItemFocus = gridFocus,
+                scrollState = gridScroll,
                 appFocus = appFocus,
                 onClick = actions::launch,
                 onLongClick = { menuApp = it },
@@ -211,6 +218,8 @@ fun LauncherContent(
         ScreenTimeDialog(
             screenTime = state.screenTime,
             apps = state.apps,
+            usageAccess = state.usageAccess,
+            onGrantUsageAccess = actions::openUsageAccessSettings,
             onSelectPeriod = actions::loadScreenTime,
             onDismiss = { showingScreenTime = false },
         )
@@ -220,6 +229,7 @@ fun LauncherContent(
             remote = state.remote,
             onEnable = actions::setRemoteEnabled,
             onNewPin = actions::newRemotePin,
+            onEnableNavigation = actions::openAccessibilitySettings,
             onDismiss = { showingRemote = false },
         )
     }
@@ -252,6 +262,7 @@ private class AppFocus {
 private fun AllApps(
     apps: List<InstalledApp>,
     firstItemFocus: FocusRequester,
+    scrollState: ScrollState,
     appFocus: AppFocus,
     onClick: (InstalledApp) -> Unit,
     onLongClick: (InstalledApp) -> Unit,
@@ -265,7 +276,7 @@ private fun AllApps(
         modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
     )
     // Plain (non-lazy) grid: a few dozen apps at most, and initial focus stays reliable.
-    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+    Column(Modifier.weight(1f).verticalScroll(scrollState)) {
         val rows = apps.chunked(COLUMNS)
         rows.forEachIndexed { index, row ->
             AppRow(row, if (index == 0) firstItemFocus else null, appFocus, onClick, onLongClick)

@@ -1,5 +1,7 @@
 package com.lilyan_lefevre.milauncher.data
 
+import java.io.ByteArrayOutputStream
+import android.graphics.Bitmap
 import android.content.pm.ApplicationInfo
 import android.app.usage.UsageStatsManager
 import android.content.Context
@@ -29,6 +31,17 @@ class AppRepository(private val context: Context) {
         return launcherActivities()
             .map { it.toInstalledApp() }
             .sortedWith(compareByDescending<InstalledApp> { lastUsed[it.packageName] ?: 0L }.thenBy { it.label.lowercase() })
+    }
+
+    /** PNG of the app banner, or of its icon when it has none, at most [maxWidth] pixels wide. */
+    fun imagePng(packageName: String, maxWidth: Int = 320): ByteArray? {
+        val info = launcherActivities().firstOrNull { it.packageName == packageName } ?: return null
+        val drawable = info.loadBanner(pm) ?: info.applicationInfo.loadBanner(pm) ?: info.loadIcon(pm)
+        val sourceWidth = drawable.intrinsicWidth.coerceAtLeast(1)
+        val width = sourceWidth.coerceAtMost(maxWidth)
+        val height = (drawable.intrinsicHeight.coerceAtLeast(1) * width / sourceWidth).coerceAtLeast(1)
+        val bitmap = drawable.toBitmap(width, height)
+        return ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it); it.toByteArray() }
     }
 
     /** Package name to label of every launchable app, without loading banners. */

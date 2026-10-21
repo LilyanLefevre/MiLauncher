@@ -1,5 +1,6 @@
 package com.lilyan_lefevre.milauncher.remote
 
+import java.net.URLDecoder
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
@@ -7,7 +8,13 @@ import java.net.Inet6Address
 import java.net.InetAddress
 
 /** Just enough HTTP/1.1 for the local remote page: small requests, one response per connection. */
-internal data class HttpRequest(val method: String, val path: String, val headers: Map<String, String>, val body: String)
+internal data class HttpRequest(
+    val method: String,
+    val path: String,
+    val headers: Map<String, String>,
+    val body: String,
+    val query: Map<String, String> = emptyMap(),
+)
 
 internal class HttpResponse(val status: Int, val contentType: String, val body: ByteArray) {
     companion object {
@@ -45,12 +52,15 @@ internal fun readRequest(input: InputStream): HttpRequest? {
         if (n < 0) return null
         read += n
     }
-    return HttpRequest(requestLine[0], requestLine[1].substringBefore('?'), headers, body.toString(Charsets.UTF_8))
+    val target = requestLine[1]
+    val query = target.substringAfter('?', "").split('&').filter { '=' in it }
+        .associate { URLDecoder.decode(it.substringBefore('='), "UTF-8") to URLDecoder.decode(it.substringAfter('='), "UTF-8") }
+    return HttpRequest(requestLine[0], target.substringBefore('?'), headers, body.toString(Charsets.UTF_8), query)
 }
 
 internal fun writeResponse(output: OutputStream, response: HttpResponse) {
     val reason = when (response.status) {
-        200 -> "OK"; 400 -> "Bad Request"; 401 -> "Unauthorized"; 403 -> "Forbidden"; 404 -> "Not Found"
+        200 -> "OK"; 400 -> "Bad Request"; 401 -> "Unauthorized"; 403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"
         429 -> "Too Many Requests"; else -> "Error"
     }
     val head = "HTTP/1.1 ${response.status} $reason\r\n" +

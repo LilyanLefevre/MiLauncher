@@ -1,5 +1,6 @@
 package com.lilyan_lefevre.milauncher.remote
 
+import java.util.concurrent.ConcurrentHashMap
 import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
@@ -22,6 +23,9 @@ class RemoteServer(private val context: Context) {
     private val apps = AppRepository(context)
     private val prefs = LauncherPrefs(context)
     private val guard = PinGuard()
+    private val keys = RemoteKeys(context)
+    // ponytail: images cached for the process lifetime; an updated app keeps its old image until restart.
+    private val images = ConcurrentHashMap<String, ByteArray>()
     private var socket: ServerSocket? = null
 
     val isRunning: Boolean
@@ -80,6 +84,18 @@ class RemoteServer(private val context: Context) {
         }
         val visible = apps.labels() - prefs.hidden
         return when ("${request.method} ${request.path}") {
+            "GET /api/status" -> HttpResponse.json(200, JSONObject().put("navigation", keys.navigationAvailable).toString())
+            "GET /api/image" -> {
+                // Same allow-list as launching: no image of a hidden or unknown package.
+                val pkg = request.query["package"]?.takeIf { it in visible } ?: return HttpResponse.status(404)
+                val png = images[pkg] ?: apps.imagePng(pkg)?.also { images[pkg] = it } ?: return HttpResponse.status(404)
+                HttpResponse(200, "image/png", png)
+            }
+            "POST /api/key" -> when (keys.press(JSONObject(request.body).getString("key"))) {
+                RemoteKeys.Result.DONE -> HttpResponse.status(200)
+                RemoteKeys.Result.NEEDS_ACCESSIBILITY -> HttpResponse.json(409, "{\"ok\":false,\"error\":\"accessibility\"}")
+                RemoteKeys.Result.UNKNOWN -> HttpResponse.status(400)
+            }
             "GET /api/apps" -> {
                 val list = JSONArray()
                 visible.entries.sortedBy { it.value.lowercase() }

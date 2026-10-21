@@ -21,8 +21,10 @@ identiques, la vidéo est donc plus rapide que la réalité).
   (apps installées par l'utilisateur, avec la confirmation d'Android).
 - **Gérer les apps** : afficher ou masquer chaque app.
 - **Temps d'écran** : temps passé dans chaque app aujourd'hui ou sur 7 jours, calculé sur la box.
-- **Télécommande sur le téléphone** (désactivée par défaut) : une page web servie par la box sur le réseau local
-  pour lancer une app, ouvrir un lien sur la TV ou revenir à l'accueil, protégée par un code affiché sur la TV.
+- **Télécommande sur le téléphone** (désactivée par défaut) : une page web servie par la box sur le réseau local,
+  appairée en scannant le QR code affiché sur la TV. Croix directionnelle et OK, Retour, Accueil, volume,
+  précédent / lecture-pause / suivant, grille des apps avec leurs bannières, et ouverture d'un lien sur la TV.
+  La page s'ajoute à l'écran d'accueil du téléphone comme une app.
 - **Mises à jour** : le launcher vérifie la dernière release GitHub et propose de l'installer.
 - Sans favoris, la barre affiche les apps les plus récemment utilisées.
 - Interface en anglais et en français, selon la langue de la box ; l'heure suit le réglage 12 h / 24 h.
@@ -39,8 +41,36 @@ Aucune pub, aucun compte, aucune statistique envoyée. Les seules requêtes rés
 Le temps d'écran est calculé sur la box à partir des statistiques d'usage d'Android et n'en sort pas.
 La télécommande écoute sur le port 8765, refuse toute adresse hors du réseau local, exige le code à 6 chiffres
 à chaque appel et se bloque une minute après 5 codes faux ; le trafic n'est pas chiffré (HTTP sur le réseau local).
+Le QR code place le code après le `#` de l'URL, partie qu'un navigateur n'envoie jamais au serveur ; la page le garde
+dans le stockage local du téléphone puis l'efface de la barre d'adresse.
+
+Faute de HTTPS sur le réseau local, Chrome ne propose pas l'installation automatiquement : la page affiche à la place
+les gestes pour l'ajouter à l'écran d'accueil (et un bouton « Installer » si le navigateur le permet).
+Le volume est celui de la box ; « précédent » et « suivant » sont les touches média, transmises à l'app qui joue.
 
 Kotlin, Jetpack Compose et [Compose for TV](https://developer.android.com/jetpack/androidx/releases/tv).
+
+## Permissions
+
+Les fonctions qui en ont besoin proposent de les accorder depuis la TV ; les commandes adb font la même chose.
+
+| Permission | Pour | Depuis la TV | Par adb |
+|---|---|---|---|
+| Accès aux données d'utilisation | apps récentes en premier, temps d'écran | Temps d'écran > « Autoriser l'accès aux données d'utilisation » | `adb shell appops set com.lilyan_lefevre.milauncher GET_USAGE_STATS allow` |
+| Installation d'apps inconnues | mises à jour depuis le launcher | tuile « Mettre à jour » | `adb shell appops set com.lilyan_lefevre.milauncher REQUEST_INSTALL_PACKAGES allow` |
+| Service d'accessibilité | flèches, OK et Retour de la télécommande | Télécommande > « Activer les flèches et OK », puis Accessibilité > Télécommande MiLauncher | voir ci-dessous |
+
+Le service d'accessibilité est déclaré sans accès au contenu des fenêtres ni aux événements : il ne lit rien à l'écran
+et n'exécute que les actions demandées par la télécommande. Android affiche malgré tout son avertissement générique.
+Par adb, l'ajouter à la liste des services déjà actifs plutôt que de la remplacer :
+
+```sh
+SERVICE=com.lilyan_lefevre.milauncher/com.lilyan_lefevre.milauncher.remote.RemoteAccessibilityService
+CURRENT=$(adb shell settings get secure enabled_accessibility_services)
+[ "$CURRENT" = "null" ] || [ -z "$CURRENT" ] && NEW=$SERVICE || NEW="$CURRENT:$SERVICE"
+adb shell settings put secure enabled_accessibility_services "$NEW"
+adb shell settings put secure accessibility_enabled 1
+```
 
 ## Installation
 
@@ -56,12 +86,9 @@ Puis l'installer sur la box :
 adb connect <ip-de-la-box>:5555
 adb install -r milauncher.apk
 
-# Tri « récents d'abord » et temps d'écran : autorise la lecture des statistiques d'usage.
-adb shell appops set com.lilyan_lefevre.milauncher GET_USAGE_STATS allow
-
-# Mises à jour depuis le launcher : autorise l'installation d'apps inconnues.
-adb shell appops set com.lilyan_lefevre.milauncher REQUEST_INSTALL_PACKAGES allow
 ```
+
+Puis accorder les [permissions](#permissions), depuis la TV ou par adb.
 
 ## Signature et CI
 

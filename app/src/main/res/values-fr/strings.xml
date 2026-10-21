@@ -28,6 +28,14 @@
     <string name="remote_pin">Code : %1$s</string>
     <string name="remote_new_pin">Nouveau code</string>
     <string name="remote_no_network">La box n\'a pas de connexion réseau.</string>
+    <string name="remote_navigation_grant">Activer les flèches et OK</string>
+    <string name="remote_navigation_hint">Dans Accessibilité, active Télécommande MiLauncher.</string>
+
+    <string name="usage_access_grant">Autoriser l\'accès aux données d\'utilisation</string>
+    <string name="usage_access_hint">Nécessaire pour le temps d\'écran et pour placer les apps récentes en premier.</string>
+
+    <string name="accessibility_label">Télécommande MiLauncher</string>
+    <string name="accessibility_description">Permet à la télécommande MiLauncher du téléphone d\'appuyer sur les flèches, OK, Retour et Accueil de la TV. Elle ne lit rien à l\'écran et n\'envoie rien nulle part.</string>
 
     <string name="min_max_24h">Min %1$d° · Max %2$d° sur 24 h</string>
 

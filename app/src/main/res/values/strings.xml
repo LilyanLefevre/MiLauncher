@@ -32,6 +32,14 @@
     <string name="remote_pin">Code: %1$s</string>
     <string name="remote_new_pin">New code</string>
     <string name="remote_no_network">The box has no network connection.</string>
+    <string name="remote_navigation_grant">Enable arrows and OK</string>
+    <string name="remote_navigation_hint">In Accessibility, turn on MiLauncher remote.</string>
+
+    <string name="usage_access_grant">Allow usage access</string>
+    <string name="usage_access_hint">Needed for screen time and to put recent apps first.</string>
+
+    <string name="accessibility_label">MiLauncher remote</string>
+    <string name="accessibility_description">Lets the MiLauncher phone remote press arrows, OK, Back and Home on the TV. It reads nothing on screen and sends nothing anywhere.</string>
 
     <string name="temperature" translatable="false">%1$d°</string>
     <string name="min_max_24h">Min %1$d° · Max %2$d° over 24 h</string>

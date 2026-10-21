@@ -87,6 +87,8 @@ fun ManageAppsDialog(
 fun ScreenTimeDialog(
     screenTime: ScreenTime?,
     apps: List<InstalledApp>,
+    usageAccess: Boolean,
+    onGrantUsageAccess: () -> Unit,
     onSelectPeriod: (ScreenTimePeriod) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -97,12 +99,15 @@ fun ScreenTimeDialog(
     val longest = usage.maxOfOrNull { it.foregroundMillis } ?: 0L
 
     DialogFrame(stringResource(R.string.screen_time), onDismiss) { firstItem ->
+        if (!usageAccess) {
+            PermissionItem(R.string.usage_access_grant, R.string.usage_access_hint, onGrantUsageAccess, Modifier.focusRequester(firstItem))
+        }
         ScreenTimePeriod.entries.forEachIndexed { index, period ->
             ListItem(
                 selected = screenTime?.period == period,
                 onClick = { onSelectPeriod(period) },
                 headlineContent = { Text(stringResource(period.label)) },
-                modifier = if (index == 0) Modifier.focusRequester(firstItem) else Modifier,
+                modifier = if (index == 0 && usageAccess) Modifier.focusRequester(firstItem) else Modifier,
             )
         }
         Text(
@@ -134,7 +139,13 @@ fun ScreenTimeDialog(
 
 /** Turns the phone remote on or off and shows how to reach it. */
 @Composable
-fun RemoteDialog(remote: RemoteInfo, onEnable: (Boolean) -> Unit, onNewPin: () -> Unit, onDismiss: () -> Unit) {
+fun RemoteDialog(
+    remote: RemoteInfo,
+    onEnable: (Boolean) -> Unit,
+    onNewPin: () -> Unit,
+    onEnableNavigation: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     DialogFrame(stringResource(R.string.remote), onDismiss, width = 600.dp) { firstItem ->
         ListItem(
             selected = false,
@@ -169,9 +180,24 @@ fun RemoteDialog(remote: RemoteInfo, onEnable: (Boolean) -> Unit, onNewPin: () -
                     }
                 }
             }
+            if (!remote.navigation) {
+                PermissionItem(R.string.remote_navigation_grant, R.string.remote_navigation_hint, onEnableNavigation)
+            }
             ListItem(selected = false, onClick = onNewPin, headlineContent = { Text(stringResource(R.string.remote_new_pin)) })
         }
     }
+}
+
+/** Row that opens the system screen where a missing permission is granted. */
+@Composable
+private fun PermissionItem(@StringRes title: Int, @StringRes hint: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    ListItem(
+        selected = false,
+        onClick = onClick,
+        headlineContent = { Text(stringResource(title)) },
+        supportingContent = { Text(stringResource(hint)) },
+        modifier = modifier,
+    )
 }
 
 private val ScreenTimePeriod.label: Int

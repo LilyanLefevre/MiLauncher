@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0b0d12">
 <meta name="color-scheme" content="dark">
 <!-- Home screen install: manifest for Android, meta tags for iOS (works over plain HTTP too). -->
@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="MiLauncher">
 <title>MiLauncher</title>
 <style>
-  :root { --bg: #0b0d12; --tile: #1a1e27; --tile-hover: #232836; --text: #f2f4f8; --dim: #8a93a6; --accent: #5b8cff; }
+  :root { --bg: #0b0d12; --tile: #1a1e27; --tile-hover: #232836; --pad: #151922; --text: #f2f4f8; --dim: #8a93a6; --accent: #5b8cff; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html { background: var(--bg); }
   body {
@@ -23,33 +23,64 @@
     padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
              max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     color: var(--text); font: 16px/1.4 system-ui, -apple-system, Roboto, sans-serif;
+    -webkit-user-select: none; user-select: none;
   }
-  header { display: flex; align-items: center; gap: 12px; margin: 8px 0 20px; }
+  header { display: flex; align-items: center; gap: 12px; margin: 8px 0 16px; }
   header img { width: 36px; height: 36px; border-radius: 9px; }
-  h1 { font-size: 20px; font-weight: 600; margin: 0; flex: 1; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0; }
   h2 { font-size: 13px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; margin: 28px 0 10px; }
   input, button { font: inherit; color: inherit; border: 0; border-radius: 12px; }
-  input { width: 100%; min-height: 48px; padding: 12px 14px; background: var(--tile); outline: 2px solid transparent; }
+  input { width: 100%; min-height: 48px; padding: 12px 14px; background: var(--tile); outline: 2px solid transparent; -webkit-user-select: text; user-select: text; }
   input:focus { outline-color: var(--accent); }
-  button { min-height: 48px; padding: 12px 16px; background: var(--tile); cursor: pointer; }
+  button { min-height: 48px; padding: 12px 16px; background: var(--tile); cursor: pointer; touch-action: manipulation; }
   button:hover { background: var(--tile-hover); }
+  button:active { transform: scale(.96); }
   button.primary { background: var(--accent); color: #fff; font-weight: 600; }
-  button:active { transform: scale(.98); }
+  button:disabled { opacity: .35; transform: none; }
+  svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; display: block; margin: auto; }
   .row { display: flex; gap: 8px; }
   .row input { flex: 1; min-width: 0; }
-  .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 45%), 1fr)); gap: 8px; }
-  .apps button { text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .status { min-height: 1.4em; margin-top: 16px; color: var(--dim); }
-  .hidden { display: none; }
-  @media (min-width: 600px) { body { padding-top: 32px; } .apps { gap: 12px; } }
+  .card { background: var(--tile); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; }
+  .card p { margin: 0 0 10px; color: var(--dim); }
+  .card button:not(.primary) { background: var(--tile-hover); }
+  .hidden { display: none !important; }
+
+  /* Remote */
+  .remote { display: grid; gap: 16px; justify-items: center; }
+  .pad { width: min(78vw, 280px); aspect-ratio: 1; border-radius: 50%; background: var(--pad); position: relative; }
+  .pad button { position: absolute; background: transparent; width: 33%; height: 33%; border-radius: 50%; padding: 0; color: var(--dim); }
+  .pad button:active { background: var(--tile-hover); color: var(--text); }
+  .pad .up { top: 2%; left: 33.5%; } .pad .down { bottom: 2%; left: 33.5%; }
+  .pad .left { left: 2%; top: 33.5%; } .pad .right { right: 2%; top: 33.5%; }
+  .pad .ok { top: 31%; left: 31%; width: 38%; height: 38%; background: var(--tile); color: var(--text); font-weight: 600; }
+  .controls { width: min(100%, 360px); display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .controls button { border-radius: 16px; min-height: 56px; padding: 0; }
+  .controls .wide { grid-column: span 2; }
+  .notice { color: var(--dim); text-align: center; font-size: 14px; max-width: 340px; margin: 0; }
+
+  /* Apps */
+  .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 45%), 1fr)); gap: 10px; }
+  .apps button { padding: 0; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; position: relative; }
+  .apps img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .apps img.icon { object-fit: contain; padding: 14%; }
+  .apps span { position: absolute; inset: auto 8px 6px; font-size: 13px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .status { min-height: 1.4em; margin-top: 16px; color: var(--dim); text-align: center; }
+  @media (min-width: 640px) { .layout { display: grid; grid-template-columns: 320px 1fr; gap: 32px; align-items: start; } .layout h2:first-child { margin-top: 0; } }
 </style>
 </head>
 <body>
 <header>
   <img src="/icon-192.png" alt="">
   <h1>MiLauncher</h1>
-  <button class="primary hidden" id="home" data-i18n="home"></button>
 </header>
+
+<div class="card hidden" id="install">
+  <p id="installHint"></p>
+  <div class="row">
+    <button class="primary hidden" id="installButton" data-i18n="install"></button>
+    <button id="installDismiss" data-i18n="later"></button>
+  </div>
+</div>
 
 <section id="pairing">
   <p data-i18n="pairHint"></p>
@@ -59,29 +90,64 @@
   </div>
 </section>
 
-<section id="remote" class="hidden">
-  <h2 data-i18n="openLink"></h2>
-  <div class="row">
-    <input id="url" type="url" inputmode="url" placeholder="https://youtube.com/watch?v=…">
-    <button class="primary" id="open" data-i18n="open"></button>
-  </div>
-  <h2 data-i18n="apps"></h2>
-  <div class="apps" id="apps"></div>
-</section>
+<div id="remote" class="layout hidden">
+  <section class="remote" aria-label="Remote">
+    <div class="pad">
+      <button class="up" data-key="up" data-repeat data-i18n-label="up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button class="left" data-key="left" data-repeat data-i18n-label="left"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="ok" data-key="ok">OK</button>
+      <button class="right" data-key="right" data-repeat data-i18n-label="right"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      <button class="down" data-key="down" data-repeat data-i18n-label="down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    </div>
+    <p class="notice hidden" id="navigationNotice" data-i18n="navigationOff"></p>
+    <div class="controls">
+      <button data-key="back" data-i18n-label="back"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button>
+      <button data-key="home" data-i18n-label="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></button>
+      <button data-key="volume_down" data-repeat data-i18n-label="volumeDown"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 12h4"/></svg></button>
+      <button data-key="volume_up" data-repeat data-i18n-label="volumeUp"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 12h4M19 10v4"/></svg></button>
+      <button data-key="previous" data-i18n-label="previous"><svg viewBox="0 0 24 24"><path d="M6 5v14"/><path d="M18 6l-9 6 9 6z"/></svg></button>
+      <button class="wide" data-key="play_pause" data-i18n-label="playPause"><svg viewBox="0 0 24 24"><path d="M5 5l7 7-7 7z"/><path d="M16 5v14M20 5v14"/></svg></button>
+      <button data-key="next" data-i18n-label="next"><svg viewBox="0 0 24 24"><path d="M18 5v14"/><path d="M6 6l9 6-9 6z"/></svg></button>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-i18n="apps"></h2>
+    <div class="apps" id="apps"></div>
+    <h2 data-i18n="openLink"></h2>
+    <div class="row">
+      <input id="url" type="url" inputmode="url" placeholder="https://youtube.com/watch?v=…">
+      <button class="primary" id="open" data-i18n="open"></button>
+    </div>
+  </section>
+</div>
 
 <div class="status" id="status" role="status"></div>
 
 <script>
   const strings = {
-    en: { pairHint: "Scan the QR code shown on the TV under Remote, or enter its code.", pair: "Pair", home: "Home",
+    en: { pairHint: "Scan the QR code shown on the TV under Remote, or enter its code.", pair: "Pair",
           openLink: "Open a link on the TV", open: "Open", apps: "Apps", wrongPin: "Wrong code.",
-          locked: "Too many attempts, try again in a minute.", done: "Done.", error: "The TV did not respond." },
+          locked: "Too many attempts, try again in a minute.", error: "The TV did not respond.",
+          navigationOff: "Arrows and OK are off: on the TV, open Remote and choose “Enable arrows and OK”.",
+          install: "Install", later: "Later",
+          installAndroid: "Add the remote to your home screen: browser menu ⋮, then “Add to Home screen”.",
+          installIos: "Add the remote to your home screen: Share button, then “Add to Home Screen”.",
+          up: "Up", down: "Down", left: "Left", right: "Right", back: "Back", home: "Home",
+          volumeUp: "Volume up", volumeDown: "Volume down", previous: "Previous", playPause: "Play or pause", next: "Next" },
     fr: { pairHint: "Scanne le QR code affiché sur la TV dans Télécommande, ou saisis son code.", pair: "Appairer",
-          home: "Accueil", openLink: "Ouvrir un lien sur la TV", open: "Ouvrir", apps: "Apps", wrongPin: "Code incorrect.",
-          locked: "Trop d'essais, réessaie dans une minute.", done: "C'est fait.", error: "La TV n'a pas répondu." },
+          openLink: "Ouvrir un lien sur la TV", open: "Ouvrir", apps: "Apps", wrongPin: "Code incorrect.",
+          locked: "Trop d'essais, réessaie dans une minute.", error: "La TV n'a pas répondu.",
+          navigationOff: "Flèches et OK désactivés : sur la TV, ouvre Télécommande puis « Activer les flèches et OK ».",
+          install: "Installer", later: "Plus tard",
+          installAndroid: "Ajoute la télécommande à l'écran d'accueil : menu ⋮ du navigateur, puis « Ajouter à l'écran d'accueil ».",
+          installIos: "Ajoute la télécommande à l'écran d'accueil : bouton Partager, puis « Sur l'écran d'accueil ».",
+          up: "Haut", down: "Bas", left: "Gauche", right: "Droite", back: "Retour", home: "Accueil",
+          volumeUp: "Volume plus", volumeDown: "Volume moins", previous: "Précédent", playPause: "Lecture ou pause", next: "Suivant" },
   };
   const t = strings[navigator.language.slice(0, 2)] || strings.en;
   document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t[el.dataset.i18n]);
+  document.querySelectorAll("[data-i18n-label]").forEach(el => el.setAttribute("aria-label", t[el.dataset.i18nLabel]));
 
   const $ = id => document.getElementById(id);
   const say = text => $("status").textContent = text;
@@ -101,42 +167,101 @@
     });
     if (response.status === 401) { localStorage.removeItem("pin"); showPairing(); throw t.wrongPin; }
     if (response.status === 429) throw t.locked;
+    if (response.status === 409) { setNavigation(false); throw t.navigationOff; }
     if (!response.ok) throw t.error;
-    return response.json();
+    return response;
   }
+  const report = message => say(typeof message === "string" ? message : t.error);
 
   function showPairing() {
     $("pairing").classList.remove("hidden");
     $("remote").classList.add("hidden");
-    $("home").classList.add("hidden");
+  }
+
+  function setNavigation(available) {
+    $("navigationNotice").classList.toggle("hidden", available);
+    document.querySelectorAll(".pad button, [data-key=back]").forEach(b => b.disabled = !available);
   }
 
   async function connect() {
     try {
-      const apps = await api("GET", "/api/apps");
+      const apps = await (await api("GET", "/api/apps")).json();
+      const status = await (await api("GET", "/api/status")).json();
       localStorage.setItem("pin", pin);
       $("pairing").classList.add("hidden");
       $("remote").classList.remove("hidden");
-      $("home").classList.remove("hidden");
-      $("apps").replaceChildren(...apps.map(app => {
-        const button = document.createElement("button");
-        button.textContent = app.label;
-        button.onclick = () => run(api("POST", "/api/launch", { package: app.package }));
-        return button;
-      }));
+      setNavigation(status.navigation);
+      $("apps").replaceChildren(...apps.map(appTile));
       say("");
-    } catch (message) { say(typeof message === "string" ? message : t.error); }
+    } catch (message) { report(message); }
   }
 
-  async function run(promise) {
-    try { await promise; say(t.done); } catch (message) { say(typeof message === "string" ? message : t.error); }
+  function appTile(app) {
+    const button = document.createElement("button");
+    button.setAttribute("aria-label", app.label);
+    const label = document.createElement("span");
+    label.textContent = app.label;
+    button.append(label);
+    button.onclick = () => api("POST", "/api/launch", { package: app.package }).then(() => say("")).catch(report);
+    // Images need the code header, so they are fetched rather than linked.
+    api("GET", "/api/image?package=" + encodeURIComponent(app.package))
+      .then(response => response.blob())
+      .then(blob => {
+        const image = new Image();
+        image.alt = "";
+        image.src = URL.createObjectURL(blob);
+        image.onload = () => {
+          if (image.naturalWidth < image.naturalHeight * 1.4) image.className = "icon";  // square icon, not a banner
+          label.remove();
+          button.prepend(image);
+        };
+      })
+      .catch(() => {});  // keep the label
+    return button;
   }
+
+  function press(key) {
+    navigator.vibrate?.(8);
+    api("POST", "/api/key", { key }).then(() => say("")).catch(report);
+  }
+
+  // Holding an arrow or a volume button repeats it, like on a real remote.
+  document.querySelectorAll("[data-key]").forEach(button => {
+    let delay, repeat;
+    const stop = () => { clearTimeout(delay); clearInterval(repeat); };
+    button.addEventListener("pointerdown", event => {
+      if (button.disabled) return;
+      event.preventDefault();
+      press(button.dataset.key);
+      if ("repeat" in button.dataset) delay = setTimeout(() => repeat = setInterval(() => press(button.dataset.key), 140), 450);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(type => button.addEventListener(type, stop));
+    button.addEventListener("contextmenu", event => event.preventDefault());
+  });
+
+  // Install: a real prompt when the browser offers one (HTTPS only), instructions otherwise.
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  let installEvent = null;
+  if (!standalone && !localStorage.getItem("installDismissed")) {
+    $("installHint").textContent = /iPhone|iPad|iPod/.test(navigator.userAgent) ? t.installIos : t.installAndroid;
+    $("install").classList.remove("hidden");
+  }
+  addEventListener("beforeinstallprompt", event => {
+    event.preventDefault();
+    installEvent = event;
+    $("installButton").classList.remove("hidden");
+  });
+  $("installButton").onclick = async () => {
+    installEvent?.prompt();
+    await installEvent?.userChoice;
+    $("install").classList.add("hidden");
+  };
+  $("installDismiss").onclick = () => { localStorage.setItem("installDismissed", "1"); $("install").classList.add("hidden"); };
 
   $("pair").onclick = () => { pin = $("pin").value.trim(); connect(); };
   $("pin").onkeydown = e => { if (e.key === "Enter") $("pair").click(); };
   $("url").onkeydown = e => { if (e.key === "Enter") $("open").click(); };
-  $("home").onclick = () => run(api("POST", "/api/home"));
-  $("open").onclick = () => run(api("POST", "/api/open", { url: $("url").value }));
+  $("open").onclick = () => api("POST", "/api/open", { url: $("url").value }).then(() => say("")).catch(report);
   if (pin) connect();
 </script>
 </body>
