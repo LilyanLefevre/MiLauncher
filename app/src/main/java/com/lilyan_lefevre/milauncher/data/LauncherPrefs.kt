@@ -1,8 +1,8 @@
 package com.lilyan_lefevre.milauncher.data
 
-import java.security.SecureRandom
 import android.content.Context
 import androidx.core.content.edit
+import java.security.SecureRandom
 
 /** User choices: ordered favorites and hidden apps. */
 class LauncherPrefs(context: Context) {

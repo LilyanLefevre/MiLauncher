@@ -1,6 +1,5 @@
 package com.lilyan_lefevre.milauncher.remote
 
-import java.util.concurrent.ConcurrentHashMap
 import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
@@ -12,6 +11,7 @@ import org.json.JSONObject
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
 /**
@@ -97,9 +97,11 @@ class RemoteServer(private val context: Context) {
                 RemoteKeys.Result.UNKNOWN -> HttpResponse.status(400)
             }
             "GET /api/apps" -> {
+                // Same order as on the TV: favorites as arranged, then the other apps, most recent first.
+                val favorites = prefs.favorites.filter { it in visible }
                 val list = JSONArray()
-                visible.entries.sortedBy { it.value.lowercase() }
-                    .forEach { list.put(JSONObject().put("package", it.key).put("label", it.value)) }
+                (favorites + (visible.keys - favorites.toSet()))
+                    .forEach { list.put(JSONObject().put("package", it).put("label", visible.getValue(it))) }
                 HttpResponse.json(200, list.toString())
             }
             "POST /api/launch" -> {

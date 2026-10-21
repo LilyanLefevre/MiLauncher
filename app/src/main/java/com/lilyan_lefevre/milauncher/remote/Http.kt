@@ -1,11 +1,11 @@
 package com.lilyan_lefevre.milauncher.remote
 
-import java.net.URLDecoder
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Inet6Address
 import java.net.InetAddress
+import java.net.URLDecoder
 
 /** Just enough HTTP/1.1 for the local remote page: small requests, one response per connection. */
 internal data class HttpRequest(

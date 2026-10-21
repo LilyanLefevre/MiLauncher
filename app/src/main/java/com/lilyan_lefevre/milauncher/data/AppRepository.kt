@@ -1,15 +1,15 @@
 package com.lilyan_lefevre.milauncher.data
 
-import java.io.ByteArrayOutputStream
-import android.graphics.Bitmap
-import android.content.pm.ApplicationInfo
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.pm.ApplicationInfo
+import android.graphics.Bitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
+import java.io.ByteArrayOutputStream
 
 data class InstalledApp(
     val packageName: String,
@@ -27,10 +27,10 @@ class AppRepository(private val context: Context) {
 
     /** Launchable apps, most recently used first, then alphabetically. */
     fun loadApps(): List<InstalledApp> {
-        val lastUsed = lastUsedTimes()
+        val order = recencyOrder()
         return launcherActivities()
             .map { it.toInstalledApp() }
-            .sortedWith(compareByDescending<InstalledApp> { lastUsed[it.packageName] ?: 0L }.thenBy { it.label.lowercase() })
+            .sortedWith(compareBy(order) { it.packageName to it.label })
     }
 
     /** PNG of the app banner, or of its icon when it has none, at most [maxWidth] pixels wide. */
@@ -44,8 +44,20 @@ class AppRepository(private val context: Context) {
         return ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it); it.toByteArray() }
     }
 
-    /** Package name to label of every launchable app, without loading banners. */
-    fun labels(): Map<String, String> = launcherActivities().associate { it.packageName to it.loadLabel(pm).toString() }
+    /** Package name to label of every launchable app, without loading banners, in the same order as [loadApps]. */
+    fun labels(): Map<String, String> {
+        val order = recencyOrder()
+        return launcherActivities()
+            .map { it.packageName to it.loadLabel(pm).toString() }
+            .sortedWith(order)
+            .toMap()
+    }
+
+    /** Most recently used first, then alphabetically, on (package name, label) pairs. */
+    private fun recencyOrder(): Comparator<Pair<String, String>> {
+        val lastUsed = lastUsedTimes()
+        return compareByDescending<Pair<String, String>> { lastUsed[it.first] ?: 0L }.thenBy { it.second.lowercase() }
+    }
 
     /** One launcher activity per package, TV entry points first, excluding this launcher. */
     private fun launcherActivities(): List<ActivityInfo> {
