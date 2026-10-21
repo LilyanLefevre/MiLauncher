@@ -1,5 +1,11 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import com.lilyan_lefevre.milauncher.data.ScreenTimePeriod
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.annotation.StringRes
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -67,6 +73,69 @@ fun ManageAppsDialog(
             )
         }
     }
+}
+
+/** Time spent per app over the selected period, computed on the device. */
+@Composable
+fun ScreenTimeDialog(
+    screenTime: ScreenTime?,
+    apps: List<InstalledApp>,
+    onSelectPeriod: (ScreenTimePeriod) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // Only launchable apps: system services (voice assistant, keyboard…) are not screen time.
+    val labels = apps.associate { it.packageName to it.label }
+    // Under a minute would read "0 min": not worth a row.
+    val usage = screenTime?.usage.orEmpty().filter { it.packageName in labels && it.foregroundMillis >= 60_000 }
+    val longest = usage.maxOfOrNull { it.foregroundMillis } ?: 0L
+
+    DialogFrame(stringResource(R.string.screen_time), onDismiss) { firstItem ->
+        ScreenTimePeriod.entries.forEachIndexed { index, period ->
+            ListItem(
+                selected = screenTime?.period == period,
+                onClick = { onSelectPeriod(period) },
+                headlineContent = { Text(stringResource(period.label)) },
+                modifier = if (index == 0) Modifier.focusRequester(firstItem) else Modifier,
+            )
+        }
+        Text(
+            if (screenTime != null && usage.isEmpty()) stringResource(R.string.screen_time_empty)
+            else stringResource(R.string.screen_time_total, formatDuration(usage.sumOf { it.foregroundMillis })),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp),
+        )
+        usage.forEach { app ->
+            // Focusable rows so the D-pad can scroll through a long list.
+            ListItem(
+                selected = false,
+                onClick = {},
+                headlineContent = { Text(labels.getValue(app.packageName)) },
+                trailingContent = { Text(formatDuration(app.foregroundMillis)) },
+                supportingContent = {
+                    Box(
+                        Modifier
+                            .padding(top = 6.dp)
+                            .fillMaxWidth(app.foregroundMillis.toFloat() / longest)
+                            .height(4.dp)
+                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)),
+                    )
+                },
+            )
+        }
+    }
+}
+
+private val ScreenTimePeriod.label: Int
+    @StringRes get() = when (this) {
+        ScreenTimePeriod.TODAY -> R.string.today
+        ScreenTimePeriod.LAST_7_DAYS -> R.string.last_7_days
+    }
+
+@Composable
+private fun formatDuration(millis: Long): String {
+    val minutes = millis / 60_000
+    return if (minutes >= 60) stringResource(R.string.duration_hours_minutes, minutes / 60, minutes % 60)
+    else stringResource(R.string.duration_minutes, minutes)
 }
 
 @Composable

@@ -14,6 +14,14 @@
     <string name="app_info">App info</string>
     <string name="uninstall">Uninstall</string>
 
+    <string name="screen_time">Screen time</string>
+    <string name="today">Today</string>
+    <string name="last_7_days">Last 7 days</string>
+    <string name="screen_time_total">Total: %1$s</string>
+    <string name="screen_time_empty">No usage recorded for this period.</string>
+    <string name="duration_hours_minutes" translatable="false">%1$d h %2$02d min</string>
+    <string name="duration_minutes" translatable="false">%1$d min</string>
+
     <string name="temperature" translatable="false">%1$d°</string>
     <string name="min_max_24h">Min %1$d° · Max %2$d° over 24 h</string>
 

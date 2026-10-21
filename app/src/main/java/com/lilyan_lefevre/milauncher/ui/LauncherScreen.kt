@@ -1,5 +1,6 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import com.lilyan_lefevre.milauncher.data.ScreenTimePeriod
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.RowScope
@@ -74,6 +75,7 @@ fun LauncherScreen(viewModel: LauncherViewModel) {
         onLaunch = viewModel::launch,
         menuActions = { appActions(it, viewModel, context) },
         onToggleHidden = viewModel::setHidden,
+        onRequestScreenTime = viewModel::loadScreenTime,
     )
 }
 
@@ -90,6 +92,7 @@ fun LauncherContent(
     onLaunch: (InstalledApp) -> Unit,
     menuActions: (InstalledApp) -> List<MenuAction>,
     onToggleHidden: (app: InstalledApp, hide: Boolean) -> Unit,
+    onRequestScreenTime: (ScreenTimePeriod) -> Unit,
     initiallyExpanded: Boolean = false,
 ) {
     val context = LocalContext.current
@@ -97,6 +100,7 @@ fun LauncherContent(
     var expanded by remember { mutableStateOf(initiallyExpanded) }
     var menuApp by remember { mutableStateOf<InstalledApp?>(null) }
     var managingApps by remember { mutableStateOf(false) }
+    var showingScreenTime by remember { mutableStateOf(false) }
     val barFocus = remember { FocusRequester() }
     val gridFocus = remember { FocusRequester() }
     val appFocus = remember { AppFocus() }
@@ -165,6 +169,7 @@ fun LauncherContent(
                 onClick = onLaunch,
                 onLongClick = { menuApp = it },
                 onManageApps = { managingApps = true },
+                onScreenTime = { onRequestScreenTime(ScreenTimePeriod.TODAY); showingScreenTime = true },
                 onOpenSettings = { context.startActivity(Intent(Settings.ACTION_SETTINGS)) },
                 modifier = Modifier
                     .height(shift)
@@ -187,6 +192,14 @@ fun LauncherContent(
             title = app.label,
             actions = menuActions(app),
             onDismiss = { menuApp = null; appFocus.packageName = app.packageName },
+        )
+    }
+    if (showingScreenTime) {
+        ScreenTimeDialog(
+            screenTime = state.screenTime,
+            apps = state.apps,
+            onSelectPeriod = onRequestScreenTime,
+            onDismiss = { showingScreenTime = false },
         )
     }
     if (managingApps) {
@@ -222,6 +235,7 @@ private fun AllApps(
     onClick: (InstalledApp) -> Unit,
     onLongClick: (InstalledApp) -> Unit,
     onManageApps: () -> Unit,
+    onScreenTime: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) = Column(modifier) {
@@ -237,12 +251,13 @@ private fun AllApps(
         rows.forEachIndexed { index, row ->
             AppRow(row, if (index == 0) firstItemFocus else null, appFocus, onClick, onLongClick)
         }
-        TileRow(itemCount = 2) {
+        TileRow(itemCount = 3) {
             ActionTile(
                 stringResource(R.string.manage_apps),
                 onManageApps,
                 Modifier.weight(1f).then(if (apps.isEmpty()) Modifier.focusRequester(firstItemFocus) else Modifier),
             )
+            ActionTile(stringResource(R.string.screen_time), onScreenTime, Modifier.weight(1f))
             ActionTile(stringResource(R.string.settings), onOpenSettings, Modifier.weight(1f))
         }
     }
@@ -313,13 +328,13 @@ private fun appActions(app: InstalledApp, viewModel: LauncherViewModel, context:
 @Preview(name = "Home", device = Devices.TV_1080p)
 @Composable
 private fun LauncherHomePreview() {
-    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }) }
+    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, {}) }
 }
 
 @Preview(name = "Expanded", device = Devices.TV_1080p)
 @Composable
 private fun LauncherExpandedPreview() {
-    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, initiallyExpanded = true) }
+    LauncherTheme { LauncherContent(previewState, emptyFlow(), {}, { emptyList() }, { _, _ -> }, {}, initiallyExpanded = true) }
 }
 
 private val previewState by lazy {

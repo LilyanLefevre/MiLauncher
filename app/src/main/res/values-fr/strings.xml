@@ -12,6 +12,12 @@
     <string name="app_info">Infos de l\'app</string>
     <string name="uninstall">Désinstaller</string>
 
+    <string name="screen_time">Temps d\'écran</string>
+    <string name="today">Aujourd\'hui</string>
+    <string name="last_7_days">7 derniers jours</string>
+    <string name="screen_time_total">Total : %1$s</string>
+    <string name="screen_time_empty">Aucune utilisation sur cette période.</string>
+
     <string name="min_max_24h">Min %1$d° · Max %2$d° sur 24 h</string>
 
     <string name="weather_clear">Ciel dégagé</string>

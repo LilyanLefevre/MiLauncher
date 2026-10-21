@@ -1,5 +1,8 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import com.lilyan_lefevre.milauncher.data.ScreenTimeRepository
+import com.lilyan_lefevre.milauncher.data.ScreenTimePeriod
+import com.lilyan_lefevre.milauncher.data.AppUsage
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,6 +28,8 @@ data class LauncherUiState(
     val favorites: List<String> = emptyList(),
     val hidden: Set<String> = emptySet(),
     val weather: Weather? = null,
+    /** Loaded on demand when the screen time dialog opens. */
+    val screenTime: ScreenTime? = null,
 ) {
     private val visible by lazy { apps.filter { it.packageName !in hidden } }
 
@@ -38,11 +43,14 @@ data class LauncherUiState(
     val others: List<InstalledApp> by lazy { visible - bar.toSet() }
 }
 
+data class ScreenTime(val period: ScreenTimePeriod, val usage: List<AppUsage>)
+
 class LauncherViewModel(application: Application) : AndroidViewModel(application) {
 
     private val apps = AppRepository(application)
     private val prefs = LauncherPrefs(application)
     private val weatherRepository = WeatherRepository(application)
+    private val screenTimeRepository = ScreenTimeRepository(application)
 
     private val _state = MutableStateFlow(LauncherUiState(favorites = prefs.favorites, hidden = prefs.hidden))
     val state: StateFlow<LauncherUiState> = _state
@@ -67,6 +75,13 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             val loaded = apps.loadApps()
             _state.update { it.copy(apps = loaded) }
+        }
+    }
+
+    fun loadScreenTime(period: ScreenTimePeriod) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val usage = screenTimeRepository.usage(period)
+            _state.update { it.copy(screenTime = ScreenTime(period, usage)) }
         }
     }
 
