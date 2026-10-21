@@ -9,6 +9,8 @@ coreKtx = "1.17.0"
 junit = "4.13.2"
 json = "20250517"
 zxing = "3.5.4"
+ktlint = "1.8.0"
+ktlintGradle = "14.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -28,3 +30,4 @@ zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" 
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }

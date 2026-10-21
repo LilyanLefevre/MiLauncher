@@ -124,8 +124,13 @@ adb shell pm disable-user --user 0 com.google.android.tungsten.setupwraith
 Pour revenir à l'accueil Google TV, remplacer `disable-user --user 0` par `enable`.
 Une mise à jour système peut réactiver ces paquets : relancer alors les commandes ci-dessus.
 
-## Tests
+## Contribuer
 
 ```sh
-./gradlew testDebugUnitTest
+./gradlew testDebugUnitTest   # tests unitaires
+./gradlew ktlintCheck         # style (règles dans .editorconfig), aussi vérifié par la CI
+./gradlew ktlintFormat        # corrige le style automatiquement
+
+# Une fois par clone : formate les fichiers Kotlin indexés avant chaque commit.
+./gradlew addKtlintFormatGitPreCommitHook
 ```
