@@ -1,5 +1,10 @@
 package com.lilyan_lefevre.milauncher.ui
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import com.lilyan_lefevre.milauncher.data.ScreenTimePeriod
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,8 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
@@ -128,7 +135,7 @@ fun ScreenTimeDialog(
 /** Turns the phone remote on or off and shows how to reach it. */
 @Composable
 fun RemoteDialog(remote: RemoteInfo, onEnable: (Boolean) -> Unit, onNewPin: () -> Unit, onDismiss: () -> Unit) {
-    DialogFrame(stringResource(R.string.remote), onDismiss) { firstItem ->
+    DialogFrame(stringResource(R.string.remote), onDismiss, width = 600.dp) { firstItem ->
         ListItem(
             selected = false,
             onClick = { onEnable(!remote.enabled) },
@@ -142,9 +149,24 @@ fun RemoteDialog(remote: RemoteInfo, onEnable: (Boolean) -> Unit, onNewPin: () -
                 if (remote.url == null) {
                     Text(stringResource(R.string.remote_no_network), color = dim)
                 } else {
-                    Text(stringResource(R.string.remote_instructions), color = dim)
-                    Text(remote.url, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 8.dp))
-                    Text(stringResource(R.string.remote_pin, remote.pin), style = MaterialTheme.typography.headlineSmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                        QrCode(
+                            content = remote.pairingUrl!!,
+                            contentDescription = stringResource(R.string.remote_qr_description),
+                            modifier = Modifier.size(168.dp).clip(RoundedCornerShape(8.dp)),
+                        )
+                        Column {
+                            Text(stringResource(R.string.remote_instructions), color = dim)
+                            // Browsers add the scheme themselves: the short form fits on one line.
+                            Text(
+                                remote.url.removePrefix("http://"),
+                                style = MaterialTheme.typography.titleLarge,
+                                maxLines = 1,
+                                modifier = Modifier.padding(vertical = 8.dp),
+                            )
+                            Text(stringResource(R.string.remote_pin, remote.pin), style = MaterialTheme.typography.titleLarge)
+                        }
+                    }
                 }
             }
             ListItem(selected = false, onClick = onNewPin, headlineContent = { Text(stringResource(R.string.remote_new_pin)) })
@@ -166,14 +188,20 @@ private fun formatDuration(millis: Long): String {
 }
 
 @Composable
-private fun DialogFrame(title: String, onDismiss: () -> Unit, items: @Composable (firstItem: FocusRequester) -> Unit) {
+private fun DialogFrame(
+    title: String,
+    onDismiss: () -> Unit,
+    width: Dp = 480.dp,
+    items: @Composable (firstItem: FocusRequester) -> Unit,
+) {
     val firstItem = remember { FocusRequester() }
     var pressedInside by remember { mutableStateOf(false) }
-    Dialog(onDismissRequest = onDismiss) {
+    // The platform width cap would override the requested width.
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             colors = SurfaceDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.width(480.dp),
+            modifier = Modifier.width(width),
         ) {
             Column(
                 Modifier

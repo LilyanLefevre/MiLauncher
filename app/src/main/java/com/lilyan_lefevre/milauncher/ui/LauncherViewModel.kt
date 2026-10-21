@@ -61,7 +61,10 @@ data class LauncherUiState(
 data class ScreenTime(val period: ScreenTimePeriod, val usage: List<AppUsage>)
 
 /** Phone remote status; [url] is null while the box has no IPv4 address. */
-data class RemoteInfo(val enabled: Boolean = false, val url: String? = null, val pin: String = "")
+data class RemoteInfo(val enabled: Boolean = false, val url: String? = null, val pin: String = "") {
+    /** Opens the remote already paired: the code sits in the fragment, which browsers never send. */
+    val pairingUrl: String? get() = url?.let { "$it/#pin=$pin" }
+}
 
 class LauncherViewModel(application: Application) : AndroidViewModel(application) {
 

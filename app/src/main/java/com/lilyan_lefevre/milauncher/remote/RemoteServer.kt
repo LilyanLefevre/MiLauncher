@@ -8,6 +8,7 @@ import com.lilyan_lefevre.milauncher.data.AppRepository
 import com.lilyan_lefevre.milauncher.data.LauncherPrefs
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import kotlin.concurrent.thread
@@ -30,13 +31,27 @@ class RemoteServer(private val context: Context) {
     @Synchronized
     fun start() {
         if (socket != null) return
-        val server = ServerSocket(PORT).also { socket = it }
+        val server = ServerSocket().apply { reuseAddress = true }.also { socket = it }
         thread(name = "remote-server", isDaemon = true) {
+            // Right after an update the previous process can still hold the port for a moment.
+            val bound = (1..BIND_ATTEMPTS).any {
+                !server.isClosed && (runCatching { server.bind(InetSocketAddress(PORT)) }.isSuccess || retryLater())
+            }
+            if (!bound) {
+                synchronized(this) { if (socket === server) socket = null }
+                server.close()
+                return@thread
+            }
             while (!server.isClosed) {
                 val client = runCatching { server.accept() }.getOrNull() ?: break
                 thread(isDaemon = true) { client.use(::serve) }
             }
         }
+    }
+
+    private fun retryLater(): Boolean {
+        Thread.sleep(1_000)
+        return false
     }
 
     @Synchronized
@@ -54,9 +69,9 @@ class RemoteServer(private val context: Context) {
     }
 
     private fun handle(request: HttpRequest): HttpResponse {
-        if (request.method == "GET" && request.path == "/") {
-            val page = context.assets.open("remote.html").use { it.readBytes() }
-            return HttpResponse(200, "text/html; charset=utf-8", page)
+        // The page and its web app files hold no data, so they are served without the code.
+        STATIC_FILES[request.path]?.takeIf { request.method == "GET" }?.let { (asset, type) ->
+            return HttpResponse(200, type, context.assets.open(asset).use { it.readBytes() })
         }
         when (guard.check(request.headers["x-pin"], prefs.remotePin)) {
             PinGuard.Result.ACCEPTED -> Unit
@@ -94,5 +109,15 @@ class RemoteServer(private val context: Context) {
 
     companion object {
         const val PORT = 8765
+        private const val BIND_ATTEMPTS = 10
+
+        /** Request path to (asset file, content type). */
+        private val STATIC_FILES = mapOf(
+            "/" to ("remote.html" to "text/html; charset=utf-8"),
+            "/manifest.webmanifest" to ("manifest.webmanifest" to "application/manifest+json"),
+            "/icon-192.png" to ("icon-192.png" to "image/png"),
+            "/icon-512.png" to ("icon-512.png" to "image/png"),
+            "/apple-touch-icon.png" to ("apple-touch-icon.png" to "image/png"),
+        )
     }
 }

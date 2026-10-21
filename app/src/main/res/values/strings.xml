@@ -27,7 +27,8 @@
 
     <string name="remote">Remote</string>
     <string name="remote_enable">Phone remote</string>
-    <string name="remote_instructions">On a phone connected to the same network, open:</string>
+    <string name="remote_instructions">Scan with a phone on the same network, or open:</string>
+    <string name="remote_qr_description">QR code to pair a phone</string>
     <string name="remote_pin">Code: %1$s</string>
     <string name="remote_new_pin">New code</string>
     <string name="remote_no_network">The box has no network connection.</string>
